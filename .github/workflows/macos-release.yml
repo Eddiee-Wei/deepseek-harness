@@ -1,0 +1,135 @@
+name: macOS desktop release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: App version override, for example 0.1.0
+        required: false
+        type: string
+  push:
+    tags:
+      - app-v*
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+
+      - name: Install pnpm
+        run: npm install --global pnpm@11.7.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify protected local transport
+        run: >-
+          pnpm exec vitest run
+          packages/host/webserver/tests/webserver.spec.ts
+          packages/bundle/web-app/tests/startup.spec.ts
+          packages/bundle/web-app/tests/web-app.spec.ts
+
+      - name: Resolve app version
+        id: version
+        shell: zsh
+        run: |
+          requested='${{ inputs.version }}'
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            requested="${GITHUB_REF_NAME#app-v}"
+          fi
+          if [[ -z "$requested" ]]; then
+            requested="$(node -p "require('./apps/cli/package.json').version.replace(/-.*/, '')")"
+          fi
+          if [[ "$requested" != <->.<->.<-> ]]; then
+            print -u2 "version must be numeric semver without a prerelease: $requested"
+            exit 2
+          fi
+          print "version=$requested" >> "$GITHUB_OUTPUT"
+
+      - name: Require release credentials for tags
+        if: github.ref_type == 'tag'
+        shell: zsh
+        run: |
+          for name in APPLE_CERTIFICATE_P12_BASE64 APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_TEAM_ID APPLE_APP_PASSWORD; do
+            if [[ -z "${(P)name}" ]]; then
+              print -u2 "missing required GitHub secret: $name"
+              exit 2
+            fi
+          done
+
+      - name: Import Developer ID certificate
+        if: env.APPLE_CERTIFICATE_P12_BASE64 != ''
+        shell: zsh
+        run: |
+          keychain="$RUNNER_TEMP/dsh-signing.keychain-db"
+          certificate="$RUNNER_TEMP/dsh-signing.p12"
+          print -rn -- "$APPLE_CERTIFICATE_P12_BASE64" | base64 --decode > "$certificate"
+          security create-keychain -p "$RUNNER_TEMP" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$RUNNER_TEMP" "$keychain"
+          security import "$certificate" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -k "$RUNNER_TEMP" "$keychain"
+          security list-keychains -d user -s "$keychain"
+          xcrun notarytool store-credentials dsh-notary \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD"
+
+      - name: Build, sign, notarize, and verify DMG
+        shell: zsh
+        env:
+          DSH_APP_VERSION: ${{ steps.version.outputs.version }}
+          DSH_APP_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          export DSH_NODE_BINARY="$(node -p 'process.execPath')"
+          if [[ -n "$APPLE_SIGNING_IDENTITY" ]]; then
+            export APPLE_NOTARY_PROFILE=dsh-notary
+          else
+            export APPLE_SIGNING_IDENTITY=-
+          fi
+          zsh apps/macos/build.sh dmg
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: DeepSeek-Harness-macOS-arm64-${{ steps.version.outputs.version }}
+          path: |
+            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg
+            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg
+            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg.sha256

@@ -8,6 +8,7 @@
  * IPC bridge. This package never prints: the URL line belongs to the shell.
  */
 
+import { timingSafeEqual } from 'node:crypto'
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse, Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
@@ -47,6 +48,8 @@ export interface Config {
   host: '127.0.0.1' | '0.0.0.0'
   /** Listen port; zero requests an OS-assigned port. */
   port: number
+  /** Optional bootstrap token required by every HTTP and upgrade request. */
+  accessToken?: string
 }
 
 /**
@@ -60,6 +63,7 @@ export class WebServer extends Service {
   static Config: z<Config> = z.object({
     host: z.union([z.const('127.0.0.1'), z.const('0.0.0.0')]).required(),
     port: z.natural().max(65535).required(),
+    accessToken: z.string().min(32),
   })
 
   private readonly exact = new Map<string, WebRoute>()
@@ -149,7 +153,9 @@ export class WebServer extends Service {
     const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
       /* v8 ignore next -- `?? '/'` arm: node:http always sets url on server
       requests; the field is only optional on the client-side IncomingMessage type */
-      const rawPath = new URL(req.url ?? '/', 'http://x').pathname
+      const requestUrl = new URL(req.url ?? '/', 'http://x')
+      if (!this.authorizeHttp(req, res, requestUrl)) return
+      const rawPath = requestUrl.pathname
       const route = this.match(rawPath)
       if (route !== undefined) {
         await route.handler(req, res)
@@ -190,6 +196,10 @@ export class WebServer extends Service {
       })
       let route: WebUpgradeRoute | undefined
       try {
+        if (!this.authorized(req)) {
+          socket.destroy()
+          return
+        }
         /* v8 ignore next -- node:http always sets url on server requests. */
         route = this.upgrades.get(new URL(req.url ?? '/', 'http://x').pathname)
       } catch (error) {
@@ -236,6 +246,55 @@ export class WebServer extends Service {
       }))
       await Promise.all([serverClosed, ...upgradedClosed])
     }, 'webServer.listen')
+  }
+
+  /** Constant-time token comparison for cookie and bootstrap values. */
+  private tokenMatches(candidate: string | undefined): boolean {
+    const expected = this.config.accessToken
+    if (expected === undefined || candidate === undefined) return expected === candidate
+    const expectedBytes = Buffer.from(expected)
+    const candidateBytes = Buffer.from(candidate)
+    return expectedBytes.length === candidateBytes.length && timingSafeEqual(expectedBytes, candidateBytes)
+  }
+
+  /** Read the host-only access cookie without decoding attacker-controlled bytes. */
+  private cookieToken(req: IncomingMessage): string | undefined {
+    const header = req.headers.cookie
+    if (header === undefined) return undefined
+    for (const field of header.split(';')) {
+      const [name, ...value] = field.trim().split('=')
+      if (name === 'dsh_access') return value.join('=')
+    }
+    return undefined
+  }
+
+  /** Whether an ordinary or upgraded request carries the configured access cookie. */
+  private authorized(req: IncomingMessage): boolean {
+    return this.config.accessToken === undefined || this.tokenMatches(this.cookieToken(req))
+  }
+
+  /**
+   * Admit an HTTP request or consume a one-time bootstrap URL by setting the
+   * HttpOnly cookie and redirecting to the same URL with the token removed.
+   */
+  private authorizeHttp(req: IncomingMessage, res: ServerResponse, url: URL): boolean {
+    if (this.config.accessToken === undefined) return true
+    const bootstrap = url.searchParams.get('token') ?? undefined
+    if (req.method === 'GET' && this.tokenMatches(bootstrap)) {
+      url.searchParams.delete('token')
+      const location = `${url.pathname}${url.search}`
+      res.writeHead(303, {
+        'cache-control': 'no-store',
+        location,
+        'set-cookie': `dsh_access=${bootstrap}; Path=/; HttpOnly; SameSite=Strict`,
+      })
+      res.end()
+      return false
+    }
+    if (this.authorized(req)) return true
+    res.writeHead(401, { 'cache-control': 'no-store' })
+    res.end('Unauthorized')
+    return false
   }
 
   /** Longest-prefix-wins over the prefix table after an exact-table miss. */

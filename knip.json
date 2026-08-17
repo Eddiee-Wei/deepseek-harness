@@ -11,7 +11,8 @@
     "sandbox-exec",
     "tar",
     "taskkill",
-    "where.exe"
+    "where.exe",
+    "zsh"
   ],
   "ignoreWorkspaces": [
     "vendor/*",
@@ -90,6 +91,21 @@
       "project": [
         "src/**/*.ts",
         "tests/**/*.ts"
+      ]
+    },
+    "apps/macos": {
+      "entry": [
+        "verify-runtime.mjs"
+      ],
+      "ignoreDependencies": [
+        "@deepseek-ai/cordis-plugin-group",
+        "@deepseek-ai/dsh",
+        "@deepseek-ai/dsh-atomic-write",
+        "@deepseek-ai/dsh-invariants",
+        "@deepseek-ai/dsh-session-telemetry",
+        "@deepseek-ai/dsh-session-title-llm",
+        "@deepseek-ai/dsh-spill",
+        "dsh-jsonrpc-agent-pkg"
       ]
     },
     "packages/host/directory-picker-auto": {

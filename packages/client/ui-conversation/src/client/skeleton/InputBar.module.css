@@ -81,6 +81,12 @@
   --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
 }
 
+/* Desktop presentation uses a restrained rounded editor rather than a
+   near-pill capsule. Browser deployments retain the established Web geometry. */
+:global(html[data-dsh-desktop='macos']) .card {
+  border-radius: 18px;
+}
+
 /* No-workspace trigger state: dashed l4 stroke marks the card as a pick-a-
    workspace affordance rather than a live composer; hover answers in the
    business blue to invite the click. Native `dashed` has a fixed browser
@@ -102,6 +108,10 @@
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' rx='22' ry='22' stroke='black' stroke-width='2' stroke-dasharray='4 4'/%3E%3C/svg%3E");
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' rx='22' ry='22' stroke='black' stroke-width='2' stroke-dasharray='4 4'/%3E%3C/svg%3E");
   pointer-events: none;
+}
+
+:global(html[data-dsh-desktop='macos']) .cardWorkspaceTrigger::after {
+  border-radius: 18px;
 }
 
 /* Disabled toolbar controls neither receive nor swallow clicks in the trigger

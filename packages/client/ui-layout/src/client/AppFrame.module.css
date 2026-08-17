@@ -117,3 +117,13 @@
 .overlayLayer > * {
   pointer-events: auto;
 }
+
+/* The native macOS shell uses a transparent full-size title bar. Its WebKit
+   user script marks the document before first paint, and each grid surface
+   reserves the same title-bar band while retaining its own fill color. */
+:global(html[data-dsh-desktop='macos']) .sidebarCol,
+:global(html[data-dsh-desktop='macos']) .centerCol,
+:global(html[data-dsh-desktop='macos']) .detailsCol {
+  box-sizing: border-box;
+  padding-top: 28px;
+}

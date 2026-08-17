@@ -35,10 +35,12 @@ interface Config {
   host: '127.0.0.1' | '0.0.0.0'
   /** Listen port; zero requests an OS-assigned port. */
   port: number
+  /** Optional bootstrap token required by every HTTP and upgrade request. */
+  accessToken?: string
 }
 ```
 
-`host` 只接受 `127.0.0.1`（默认姿态）和 `0.0.0.0`（刻意的网络暴露）；没有 TLS、认证或 origin 策略，因此绑定到非回环地址会把服务器暴露给该网络。dist 位置是认领席位的前端插件的组装事实。
+`host` 只接受 `127.0.0.1`（默认姿态）和 `0.0.0.0`（刻意的网络暴露）。配置 `accessToken` 后，每个 HTTP 与 upgrade 请求都必须携带通过一次性引导重定向获得、仅限当前宿主的访问 cookie。这个本机管理进程栅栏不是 TLS、通用 origin 策略或远端部署认证，因此绑定到非回环地址仍会把服务器暴露给该网络。dist 位置是认领席位的前端插件的组装事实。
 
 ## 服务
 
@@ -104,5 +106,5 @@ tapIndex(transform: (html: string) => string): () => void
 applyIndexTaps(html: string): string
 ```
 
-Source: [`packages/host/webserver/src/index.ts:59`](../../packages/host/webserver/src/index.ts)
+Source: [`packages/host/webserver/src/index.ts:62`](../../packages/host/webserver/src/index.ts)
 <!-- END GENERATED cordis-surface -->

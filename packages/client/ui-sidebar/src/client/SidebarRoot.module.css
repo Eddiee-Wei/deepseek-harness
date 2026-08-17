@@ -282,3 +282,10 @@
     animation: none;
   }
 }
+
+/* The macOS title bar already contributes the upper window rhythm. Keep the
+   brand row compact so the first task action aligns with the native shell. */
+:global(html[data-dsh-desktop='macos']) .logoRow {
+  height: 44px;
+  margin-bottom: 4px;
+}

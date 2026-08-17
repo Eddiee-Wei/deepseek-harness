@@ -28,7 +28,7 @@ afterEach(async () => {
 })
 
 /** Write a cordis.yml with one webserver row, then boot it through the real Loader. */
-async function loadComposition(port = 0): Promise<Context> {
+async function loadComposition(port = 0, accessToken?: string): Promise<Context> {
   root = await mkdtemp(join(tmpdir(), 'dsh-webserver-loader-'))
   const configPath = join(root, 'cordis.yml')
   await writeFile(configPath, [
@@ -36,6 +36,7 @@ async function loadComposition(port = 0): Promise<Context> {
     '  config:',
     "    host: '127.0.0.1'",
     `    port: ${String(port)}`,
+    ...accessToken === undefined ? [] : [`    accessToken: ${JSON.stringify(accessToken)}`],
     '',
   ].join('\n'))
 
@@ -222,5 +223,36 @@ describe('real Loader composition', () => {
       if (root !== undefined) await rm(root, { recursive: true, force: true })
       root = firstRoot
     }
+  })
+
+  it('exchanges a bootstrap token for an HttpOnly cookie before serving routes', { timeout: 60_000 }, async () => {
+    const accessToken = 'desktop-test-token-0123456789abcdef'
+    const loaded = await loadComposition(0, accessToken)
+    const port = loaded.webServer.port
+    loaded.webServer.register({
+      kind: 'exact',
+      path: '/probe',
+      handler: (_req, res) => { res.writeHead(200); res.end('AUTHENTICATED') },
+    })
+
+    expect((await request(port, '/probe')).status).toBe(401)
+    expect((await request(port, '/?token=wrong')).status).toBe(401)
+
+    const bootstrap = await fetch(`http://127.0.0.1:${String(port)}/probe?token=${accessToken}&view=chat`, {
+      redirect: 'manual',
+    })
+    expect(bootstrap.status).toBe(303)
+    expect(bootstrap.headers.get('location')).toBe('/probe?view=chat')
+    const cookie = bootstrap.headers.get('set-cookie')
+    expect(cookie).toContain('dsh_access=')
+    expect(cookie).toContain('HttpOnly')
+    expect(cookie).toContain('SameSite=Strict')
+    expect(cookie).not.toContain('Secure')
+
+    const authenticated = await fetch(`http://127.0.0.1:${String(port)}/probe`, {
+      headers: { cookie: cookie?.split(';', 1)[0] ?? '' },
+    })
+    expect(authenticated.status).toBe(200)
+    expect(await authenticated.text()).toBe('AUTHENTICATED')
   })
 })

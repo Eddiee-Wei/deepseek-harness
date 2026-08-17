@@ -11,8 +11,8 @@ import { Context } from '@deepseek-ai/cordis'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
 import { internals, provideCmdline } from '@deepseek-ai/dsh-cmdline'
-import { afterEach, describe, expect, it } from 'vitest'
-import { apply, WEB_STARTUP_SERVICE, type WebStartupValues } from '../src/startup.ts'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { apply, DSH_WEB_ACCESS_TOKEN, WEB_STARTUP_SERVICE, type WebStartupValues } from '../src/startup.ts'
 
 /** What one fixture boot observed. */
 interface Observed {
@@ -27,6 +27,7 @@ afterEach(async () => {
   for (const dispose of disposers.splice(0)) await dispose()
   internals.stdout = process.stdout
   internals.stderr = process.stderr
+  vi.unstubAllEnvs()
 })
 
 /**
@@ -110,6 +111,24 @@ describe('web command-line provider', () => {
       port: 3080,
       trustedHosts: [],
     })
+  })
+
+  it('publishes a validated supervisor token without adding a command-line flag', async () => {
+    vi.stubEnv(DSH_WEB_ACCESS_TOKEN, 'desktop-test-token-0123456789abcdef')
+    const { values, observed } = await bootProvider([])
+    expect(values).toEqual({
+      trustedHosts: [],
+      accessToken: 'desktop-test-token-0123456789abcdef',
+    })
+    expect(observed.out).not.toContain('desktop-test-token')
+  })
+
+  it('rejects a weak or cookie-unsafe supervisor token', async () => {
+    vi.stubEnv(DSH_WEB_ACCESS_TOKEN, 'too short; unsafe')
+    const { values, observed } = await bootProvider([])
+    expect(values).toBeUndefined()
+    expect(observed.out).toContain(`${DSH_WEB_ACCESS_TOKEN} must be at least 32 URL-safe characters`)
+    expect(observed.exits).toEqual([1])
   })
 
   it('prints its own help and leaves the consumer pending', async () => {

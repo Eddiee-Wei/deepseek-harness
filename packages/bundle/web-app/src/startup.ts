@@ -1,7 +1,8 @@
 /**
  * The web app's command-line provider: it parses the `dsh --profile web` flag
- * family (`--host`, `--port`, `--trusted-host`) and its `--help`
- * text, then provides the immutable values as {@link WEB_STARTUP_SERVICE}.
+ * family (`--host`, `--port`, `--trusted-host`) and its `--help` text, then
+ * provides the immutable values plus an optional process-supervisor access
+ * token as {@link WEB_STARTUP_SERVICE}.
  * Ordinary rows inject that service before reading it from lazy config.
  * @module @deepseek-ai/dsh-web-app/startup
  */
@@ -27,7 +28,12 @@ export interface WebStartupValues {
   port?: number
   /** Explicit `--trusted-host` authorities, in argument order. */
   trustedHosts: string[]
+  /** URL-safe token supplied by a local desktop supervisor. */
+  accessToken?: string
 }
+
+/** Environment variable used by a local supervisor without exposing the token in process arguments. */
+export const DSH_WEB_ACCESS_TOKEN = 'DSH_WEB_ACCESS_TOKEN'
 
 /** The web flag family, as commander parsed it. */
 interface WebOptions {
@@ -66,16 +72,21 @@ export function apply(ctx: Context): void {
   const program = webCommand()
   program.action(() => {
     const options = program.opts<WebOptions>()
+    const accessToken = process.env[DSH_WEB_ACCESS_TOKEN]
     if (options.host === '0.0.0.0') {
       program.error('error: --host 0.0.0.0 is intentionally not supported yet for safety: it would expose remote code execution to the network; use 127.0.0.1 instead')
     }
     if (options.port !== undefined && !/^\d+$/.test(options.port)) {
       program.error(`error: --port must be a number, got ${JSON.stringify(options.port)}`)
     }
+    if (accessToken !== undefined && !/^[A-Za-z0-9_-]{32,}$/.test(accessToken)) {
+      program.error(`error: ${DSH_WEB_ACCESS_TOKEN} must be at least 32 URL-safe characters`)
+    }
     ctx.provide(WEB_STARTUP_SERVICE, {
       ...options.host !== undefined && { host: options.host },
       ...options.port !== undefined && { port: Number(options.port) },
       trustedHosts: options.trustedHost ?? [],
+      ...accessToken !== undefined && { accessToken },
     } satisfies WebStartupValues)
   })
   parseCmdline(ctx, program)
