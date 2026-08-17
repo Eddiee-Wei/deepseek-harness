@@ -28,7 +28,9 @@ App 和 DMG 输出到 `.artifacts/macos/`。构建过程会把生产 workspace �
 - `APPLE_TEAM_ID`
 - `APPLE_APP_PASSWORD`
 
-推送 `app-v0.1.0` 这类 tag 后，工作流会构建、Developer ID 签名、公证、装订、验证，并把 DMG 与 SHA-256 文件发布到 GitHub Release。手动运行工作流也会生成 artifact；未提供签名凭据时使用 ad hoc 签名，并且不会发布 Release。
+推送 `app-v0.1.0` 这类 tag 后，工作流会构建、Developer ID 签名、公证、装订、验证，并把 DMG 与 SHA-256 文件发布到 GitHub Release。缺少任一 Apple 凭据时，工作流会拒绝发布这类正式版本。
+
+没有 Apple 凭据时，可以推送 `test-v0.1.0` 这类 tag，发布带有明确标识的 GitHub Pre-release。即使仓库以后配置了 secrets，这类测试 DMG 也会强制使用 ad hoc 签名且不进行公证。Release 会提示 macOS 可能阻止常规安装、产物只适合可信测试，并要求用户在打开前核对随附的 SHA-256 文件。手动运行工作流只生成 artifact，不发布 Release；缺少凭据时使用 ad hoc 签名。
 
 ## 安全与所有权
 

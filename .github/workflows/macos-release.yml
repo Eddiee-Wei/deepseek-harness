@@ -10,6 +10,7 @@ on:
   push:
     tags:
       - app-v*
+      - test-v*
 
 permissions:
   contents: write
@@ -60,7 +61,14 @@ jobs:
         run: |
           requested='${{ inputs.version }}'
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            requested="${GITHUB_REF_NAME#app-v}"
+            case "$GITHUB_REF_NAME" in
+              app-v*) requested="${GITHUB_REF_NAME#app-v}" ;;
+              test-v*) requested="${GITHUB_REF_NAME#test-v}" ;;
+              *)
+                print -u2 "unsupported release tag: $GITHUB_REF_NAME"
+                exit 2
+                ;;
+            esac
           fi
           if [[ -z "$requested" ]]; then
             requested="$(node -p "require('./apps/cli/package.json').version.replace(/-.*/, '')")"
@@ -71,8 +79,8 @@ jobs:
           fi
           print "version=$requested" >> "$GITHUB_OUTPUT"
 
-      - name: Require release credentials for tags
-        if: github.ref_type == 'tag'
+      - name: Require credentials for a notarized release
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'app-v')
         shell: zsh
         run: |
           for name in APPLE_CERTIFICATE_P12_BASE64 APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_TEAM_ID APPLE_APP_PASSWORD; do
@@ -83,7 +91,7 @@ jobs:
           done
 
       - name: Import Developer ID certificate
-        if: env.APPLE_CERTIFICATE_P12_BASE64 != ''
+        if: env.APPLE_CERTIFICATE_P12_BASE64 != '' && !startsWith(github.ref_name, 'test-v')
         shell: zsh
         run: |
           keychain="$RUNNER_TEMP/dsh-signing.keychain-db"
@@ -107,7 +115,10 @@ jobs:
           DSH_APP_BUILD_NUMBER: ${{ github.run_number }}
         run: |
           export DSH_NODE_BINARY="$(node -p 'process.execPath')"
-          if [[ -n "$APPLE_SIGNING_IDENTITY" ]]; then
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" == test-v* ]]; then
+            export APPLE_SIGNING_IDENTITY=-
+            unset APPLE_NOTARY_PROFILE
+          elif [[ -n "$APPLE_SIGNING_IDENTITY" ]]; then
             export APPLE_NOTARY_PROFILE=dsh-notary
           else
             export APPLE_SIGNING_IDENTITY=-
@@ -124,12 +135,31 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish GitHub Release
-        if: github.ref_type == 'tag'
+      - name: Publish notarized GitHub Release
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'app-v')
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           generate_release_notes: true
           fail_on_unmatched_files: true
+          files: |
+            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg
+            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg.sha256
+
+      - name: Publish unsigned test Pre-release
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'test-v')
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          name: DeepSeek Harness ${{ steps.version.outputs.version }} unsigned macOS test build
+          prerelease: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          body: |
+            > [!WARNING]
+            > This Apple Silicon test build uses ad hoc signing and has not been Apple-notarized. macOS may block normal installation. It is for trusted testing only, not general distribution.
+            >
+            > 此 Apple Silicon 测试包仅使用 ad hoc 签名，未经 Apple 公证。macOS 可能阻止常规安装；它只用于可信测试，不适合公开分发。
+
+            Verify the download against the attached `.sha256` file before opening it.
           files: |
             .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg
             .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg.sha256

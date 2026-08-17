@@ -28,7 +28,9 @@ The app and DMG are written below `.artifacts/macos/`. The build deploys product
 - `APPLE_TEAM_ID`
 - `APPLE_APP_PASSWORD`
 
-Push a tag such as `app-v0.1.0` to build, Developer ID-sign, notarize, staple, verify, and publish the DMG plus its SHA-256 file in a GitHub Release. Manual workflow runs also produce an artifact; without signing credentials they use ad hoc signing and do not publish a Release.
+Push a tag such as `app-v0.1.0` to build, Developer ID-sign, notarize, staple, verify, and publish the DMG plus its SHA-256 file in a GitHub Release. The workflow refuses to publish this release class when any Apple credential is missing.
+
+When Apple credentials are unavailable, a tag such as `test-v0.1.0` publishes an explicitly labeled GitHub Pre-release. That test DMG is forced to use ad hoc signing and is not notarized, even if repository secrets are later configured. The Release warns that macOS may block normal installation and that the artifact is for trusted testing only; users should verify the attached SHA-256 file before opening it. Manual workflow runs produce an artifact without publishing a Release and use ad hoc signing when credentials are absent.
 
 ## Security and ownership
 
