@@ -57,7 +57,7 @@ jobs:
 
       - name: Resolve app version
         id: version
-        shell: zsh
+        shell: zsh {0}
         run: |
           requested='${{ inputs.version }}'
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
@@ -81,7 +81,7 @@ jobs:
 
       - name: Require credentials for a notarized release
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'app-v')
-        shell: zsh
+        shell: zsh {0}
         run: |
           for name in APPLE_CERTIFICATE_P12_BASE64 APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_TEAM_ID APPLE_APP_PASSWORD; do
             if [[ -z "${(P)name}" ]]; then
@@ -92,7 +92,7 @@ jobs:
 
       - name: Import Developer ID certificate
         if: env.APPLE_CERTIFICATE_P12_BASE64 != '' && !startsWith(github.ref_name, 'test-v')
-        shell: zsh
+        shell: zsh {0}
         run: |
           keychain="$RUNNER_TEMP/dsh-signing.keychain-db"
           certificate="$RUNNER_TEMP/dsh-signing.p12"
@@ -109,7 +109,7 @@ jobs:
             --password "$APPLE_APP_PASSWORD"
 
       - name: Build, sign, notarize, and verify DMG
-        shell: zsh
+        shell: zsh {0}
         env:
           DSH_APP_VERSION: ${{ steps.version.outputs.version }}
           DSH_APP_BUILD_NUMBER: ${{ github.run_number }}
