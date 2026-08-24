@@ -12,13 +12,13 @@ DeepSeek Harness 已有适合桌面编程 agent 的浏览器表层、会话与�
 
 `apps/macos` 是现有 `dsh web` 组合之上的私有部署根与 Swift AppKit／WebKit 原生外壳。它被明确排除在 npm release member 策略之外，因为其 manifest 描述的是复制进签名 App 的依赖闭包，而不是可供消费的 JavaScript 包。应用部署生产 workspace 包，内置 arm64 Node.js，并使用原生 Node.js 启动已发布的 `@deepseek-ai/dsh` CLI。外壳只解析现有 `dsh web:` 就绪行，不导入 agent 内部实现，不修改 `agent-loop`，不发明会话格式，也不增加桌面专用工具协议。
 
-外壳会在文档首次绘制前注入 `html[data-dsh-desktop='macos']`。客户端包只通过该标记为原生标题栏留白并进行少量桌面几何调整。可见产品身份仍是 DeepSeek Harness，窗口组合则遵循 Codex 桌面布局：原生窗口装饰、常驻导航侧栏、对话画布、输入框和可选详情栏。
+外壳会在文档首次绘制前注入 `html[data-dsh-desktop='macos']`。客户端包只通过该标记为原生标题栏留白并进行少量桌面几何调整。对应的原生拖拽视图会把原始鼠标按下事件交给 `NSWindow.performDrag(with:)`；系统窗口移动因此只发生在标题栏留白区域，不依赖 WebKit 命中测试，也不会让整个窗口背景都可拖动。可见产品身份仍是 DeepSeek Harness，窗口组合则遵循 Codex 桌面布局：原生窗口装饰、常驻导航侧栏、对话画布、输入框和可选详情栏。
 
 每次启动都让 Web 服务器绑定 `127.0.0.1` 的 OS 随机端口，并生成一个 256 位、URL 安全的引导 token。`DSH_WEB_ACCESS_TOKEN` 通过子进程环境携带 token，不增加公开 CLI 参数，也不进入进程参数。顶层 GET query 通过匹配后，webserver 会把 token 换成仅限当前宿主、HttpOnly、SameSite=Strict 的 cookie，通过重定向移除 query，并拒绝其他所有未携带该 cookie 的 HTTP 与 upgrade 请求。token 使用常量时间比较。未配置 token 的 Web 组合保持此前的无认证行为。
 
 WebKit 使用非持久数据存储，导航只允许当前受管的回环 origin。用户点击的外部链接交给系统浏览器。App 退出时负责子进程生命周期，先发送 SIGTERM，再用有时间上限的 SIGKILL 兜底。Developer ID 签名启用 hardened runtime；内置 Node.js 只获得其运行时与原生 addon 所需的动态代码和库校验例外。应用不启用 App Sandbox，因为 Harness 支持的工作包含经用户授权的文件系统、终端、子进程和语言服务器访问；这些权限仍由现有 Harness 策略负责。
 
-`apps/macos/build.sh` 部署运行时，运行构建产物自检以验证访问栅栏，编译外壳，从内到外为嵌套 Mach-O 文件签名，验证 App，创建并验证压缩 DMG，最后输出 SHA-256 文件。`.github/workflows/macos-release.yml` 使用固定 commit 的 action 与 Apple Silicon runner。`app-v*` tag 必须具备 Developer ID 与公证凭据，并把验证后的 DMG 和校验和发布到 GitHub Release。`test-v*` tag 强制使用 ad hoc 签名、跳过公证，并发布带有明确警告、只用于可信测试的 GitHub Pre-release。手动运行可以生成 artifact，但不会发布 Release。
+`apps/macos/build.sh` 会读取内置 `@deepseek-ai/dsh` CLI manifest 中的精确版本号，并把 Web 文档标题构建为 `DeepSeek Harness <版本号>`，保留预发布后缀。这样，已安装客户端的身份会随已同步的 Harness revision 更新，同时不需要在运行时发起网络请求。随后，脚本会部署运行时，运行构建产物自检以验证访问栅栏，编译外壳，从内到外为嵌套 Mach-O 文件签名，验证 App，创建并验证压缩 DMG，最后输出 SHA-256 文件。`.github/workflows/macos-release.yml` 使用固定 commit 的 action 与 Apple Silicon runner。`app-v*` tag 必须具备 Developer ID 与公证凭据，并把验证后的 DMG 和校验和发布到 GitHub Release。`test-v*` tag 强制使用 ad hoc 签名、跳过公证，并发布带有明确警告、只用于可信测试的 GitHub Pre-release。手动运行可以生成 artifact，但不会发布 Release。
 
 ## 考虑过的替代方案
 

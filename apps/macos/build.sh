@@ -34,7 +34,9 @@ if [[ "$(uname -m)" != "arm64" || "$(file -b "$NODE_SOURCE")" != *"arm64"* ]]; t
   exit 2
 fi
 
-DEFAULT_APP_VERSION="$(node -p "require('$REPO_ROOT/apps/cli/package.json').version.replace(/-.*/, '')")"
+HARNESS_VERSION="$(node -p "require('$REPO_ROOT/apps/cli/package.json').version")"
+DESKTOP_CLIENT_TITLE="DeepSeek Harness $HARNESS_VERSION"
+DEFAULT_APP_VERSION="${HARNESS_VERSION%%-*}"
 APP_VERSION="${DSH_APP_VERSION:-$DEFAULT_APP_VERSION}"
 APP_BUILD_NUMBER="${DSH_APP_BUILD_NUMBER:-1}"
 SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:--}"
@@ -43,7 +45,11 @@ rm -rf "$ARTIFACT_ROOT"
 mkdir -p "$MACOS_PATH" "$RUNTIME_PATH/node/bin" "$RUNTIME_PATH/app"
 
 if [[ "${DSH_SKIP_WEB_BUILD:-0}" != "1" ]]; then
-  pnpm run build
+  DSH_CLIENT_TITLE="$DESKTOP_CLIENT_TITLE" pnpm run build
+fi
+if ! grep -Fq "<title>$DESKTOP_CLIENT_TITLE</title>" "$REPO_ROOT/apps/web/dist/index.html"; then
+  print -u2 "the packaged Web client title does not match the Harness version: $DESKTOP_CLIENT_TITLE"
+  exit 2
 fi
 pnpm --ignore-scripts --config.inject-workspace-packages=true \
   --filter @deepseek-ai/dsh-macos-app deploy --prod "$RUNTIME_PATH/app"

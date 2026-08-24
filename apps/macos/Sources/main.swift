@@ -8,7 +8,9 @@ private let titlebarDragHeight: CGFloat = 28
 
 /// Native hit region matching the Web client's macOS title-bar clearance.
 private final class TitlebarDragView: NSView {
-    override var mouseDownCanMoveWindow: Bool { true }
+    override func mouseDown(with event: NSEvent) {
+        window?.performDrag(with: event)
+    }
 }
 
 private func randomAccessToken() throws -> String {

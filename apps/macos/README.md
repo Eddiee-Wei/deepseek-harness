@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 This directory owns the Apple Silicon desktop distribution. It is an additive presentation and packaging layer over the shipped `dsh web` composition: the Swift AppKit/WebKit shell starts the bundled Node.js and `@deepseek-ai/dsh` CLI, then renders the existing Web client. Agent, session, plugin, tool, permission, settings, and credential behavior remains owned by the normal DeepSeek Harness packages. The shell does not fork `agent-loop` or carry a private agent protocol, which keeps routine upstream updates limited to rebuilding the app and resolving ordinary package changes.
 
-The window follows the Codex desktop page format while retaining DeepSeek Harness identity and features: a compact native title bar, persistent left workspace/session navigation, a quiet conversation canvas, a centered composer, and the existing details/review column. The shell injects only `html[data-dsh-desktop='macos']`; narrowly scoped client CSS uses that marker for native title-bar clearance and desktop geometry, while an invisible AppKit drag region matching the clearance keeps window movement native. Browser deployments keep their existing presentation.
+The window follows the Codex desktop page format while retaining DeepSeek Harness identity and features: a compact native title bar, persistent left workspace/session navigation, a quiet conversation canvas, a centered composer, and the existing details/review column. The shell injects only `html[data-dsh-desktop='macos']`; narrowly scoped client CSS uses that marker for native title-bar clearance and desktop geometry. An invisible AppKit view matching that clearance hands its original mouse-down event to `NSWindow.performDrag(with:)`, so dragging the top strip moves the native window without turning Web content into a drag target. Browser deployments keep their existing presentation.
 
 ## Local build
 
@@ -15,7 +15,7 @@ pnpm run app:macos
 pnpm run app:macos:dmg
 ```
 
-The app and DMG are written below `.artifacts/macos/`. The build deploys production workspace packages into the app, copies the current arm64 Node.js executable, starts the deployed CLI with plain bundled Node.js, proves the local access fence, compiles the Swift shell, signs every Mach-O dependency, verifies the app signature, creates and verifies the DMG, and writes a SHA-256 file. Local builds use ad hoc signing unless `APPLE_SIGNING_IDENTITY` names a Developer ID Application certificate.
+The app and DMG are written below `.artifacts/macos/`. The build labels the desktop document `DeepSeek Harness <version>` from the exact `@deepseek-ai/dsh` version in the synchronized checkout, including any prerelease suffix, instead of using the generic local Web-build title. It then deploys production workspace packages into the app, copies the current arm64 Node.js executable, starts the deployed CLI with plain bundled Node.js, proves the local access fence, compiles the Swift shell, signs every Mach-O dependency, verifies the app signature, creates and verifies the DMG, and writes a SHA-256 file. The `.app` can be copied to `/Applications` or installed through the DMG. Local builds use ad hoc signing unless `APPLE_SIGNING_IDENTITY` names a Developer ID Application certificate.
 
 ## Release
 
