@@ -120,8 +120,8 @@ describe('SidebarRoot shell', () => {
         options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
     />)
 
-    expect(screen.getByText('DeepSeek Harness')).toBeTruthy()
-    expect(screen.getByText('0.1.1-rc.2')).toBeTruthy()
+    expect(screen.getByText('DeepSeek Harness').className).toContain('versionedBrandName')
+    expect(screen.getByText('0.1.1-rc.2').className).toContain('productVersion')
     expect(screen.queryByText('DSH Local Build')).toBeNull()
     expect(screen.queryByText('0123456')).toBeNull()
   })
