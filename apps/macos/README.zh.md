@@ -15,7 +15,7 @@ pnpm run app:macos
 pnpm run app:macos:dmg
 ```
 
-App 和 DMG 输出到 `.artifacts/macos/`。构建过程会先使用已同步 checkout 中 `@deepseek-ai/dsh` 的精确版本号（包括预发布后缀）把桌面文档标识为 `DeepSeek Harness <版本号>`，不再沿用通用的本地 Web 构建名称。随后，它会把生产 workspace 包部署进 App，复制当前 arm64 Node.js，使用内置的原生 Node.js 启动部署后的 CLI 并验证本机访问栅栏，编译 Swift 外壳，为所有 Mach-O 依赖签名，验证 App 签名，创建并验证 DMG，最后写入 SHA-256 文件。可以把 `.app` 复制到 `/Applications`，也可以通过 DMG 安装。除非 `APPLE_SIGNING_IDENTITY` 指向 Developer ID Application 证书，本地构建使用 ad hoc 签名。
+App 和 DMG 输出到 `.artifacts/macos/`。构建过程会使用已同步 checkout 中 `@deepseek-ai/dsh` 的精确版本号（包括预发布后缀），同时把桌面文档与展开的侧边栏标识为 `DeepSeek Harness` 加版本号，不再沿用通用的本地 Web 构建身份。随后，它会把生产 workspace 包部署进 App，复制当前 arm64 Node.js，使用内置的原生 Node.js 启动部署后的 CLI 并验证本机访问栅栏，编译 Swift 外壳，为所有 Mach-O 依赖签名，验证 App 签名，创建并验证 DMG，最后写入 SHA-256 文件。可以把 `.app` 复制到 `/Applications`，也可以通过 DMG 安装。除非 `APPLE_SIGNING_IDENTITY` 指向 Developer ID Application 证书，本地构建使用 ad hoc 签名。
 
 ## 发布
 

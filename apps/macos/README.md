@@ -15,7 +15,7 @@ pnpm run app:macos
 pnpm run app:macos:dmg
 ```
 
-The app and DMG are written below `.artifacts/macos/`. The build labels the desktop document `DeepSeek Harness <version>` from the exact `@deepseek-ai/dsh` version in the synchronized checkout, including any prerelease suffix, instead of using the generic local Web-build title. It then deploys production workspace packages into the app, copies the current arm64 Node.js executable, starts the deployed CLI with plain bundled Node.js, proves the local access fence, compiles the Swift shell, signs every Mach-O dependency, verifies the app signature, creates and verifies the DMG, and writes a SHA-256 file. The `.app` can be copied to `/Applications` or installed through the DMG. Local builds use ad hoc signing unless `APPLE_SIGNING_IDENTITY` names a Developer ID Application certificate.
+The app and DMG are written below `.artifacts/macos/`. The build labels both the desktop document and expanded sidebar with `DeepSeek Harness` plus the exact `@deepseek-ai/dsh` version in the synchronized checkout, including any prerelease suffix, instead of using the generic local Web-build identity. It then deploys production workspace packages into the app, copies the current arm64 Node.js executable, starts the deployed CLI with plain bundled Node.js, proves the local access fence, compiles the Swift shell, signs every Mach-O dependency, verifies the app signature, creates and verifies the DMG, and writes a SHA-256 file. The `.app` can be copied to `/Applications` or installed through the DMG. Local builds use ad hoc signing unless `APPLE_SIGNING_IDENTITY` names a Developer ID Application certificate.
 
 ## Release
 

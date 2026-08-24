@@ -108,6 +108,24 @@ describe('SidebarRoot shell', () => {
     expect(container.querySelector('svg')).not.toBeNull()
   })
 
+  it('renders a build-selected brand name and version instead of the local identity', () => {
+    vi.stubEnv('DSH_CLIENT_BRAND_NAME', 'DeepSeek Harness')
+    vi.stubEnv('DSH_CLIENT_COMMIT_HASH', '0123456')
+    vi.stubEnv('DSH_CLIENT_VERSION', '0.1.1-rc.2')
+    render(<SidebarRoot
+      collapsed={false} width={300}
+      useSessions={neverHook} useWorkspaces={neverHook}
+      startSession={vi.fn()} toggleSidebar={vi.fn()} t={t}
+      renderSlot={((_key: string, _owner: unknown, options?: { fallback?: ReactNode }) =>
+        options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
+    />)
+
+    expect(screen.getByText('DeepSeek Harness')).toBeTruthy()
+    expect(screen.getByText('0.1.1-rc.2')).toBeTruthy()
+    expect(screen.queryByText('DSH Local Build')).toBeNull()
+    expect(screen.queryByText('0123456')).toBeNull()
+  })
+
   it('hands the region its wide flag and clamps expandSidebar to the collapsed state', () => {
     const b = mountShell()
     expect(b.regionOwner().wide).toBe(true)

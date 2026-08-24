@@ -35,7 +35,8 @@ if [[ "$(uname -m)" != "arm64" || "$(file -b "$NODE_SOURCE")" != *"arm64"* ]]; t
 fi
 
 HARNESS_VERSION="$(node -p "require('$REPO_ROOT/apps/cli/package.json').version")"
-DESKTOP_CLIENT_TITLE="DeepSeek Harness $HARNESS_VERSION"
+DESKTOP_CLIENT_BRAND_NAME="DeepSeek Harness"
+DESKTOP_CLIENT_TITLE="$DESKTOP_CLIENT_BRAND_NAME $HARNESS_VERSION"
 DEFAULT_APP_VERSION="${HARNESS_VERSION%%-*}"
 APP_VERSION="${DSH_APP_VERSION:-$DEFAULT_APP_VERSION}"
 APP_BUILD_NUMBER="${DSH_APP_BUILD_NUMBER:-1}"
@@ -45,7 +46,10 @@ rm -rf "$ARTIFACT_ROOT"
 mkdir -p "$MACOS_PATH" "$RUNTIME_PATH/node/bin" "$RUNTIME_PATH/app"
 
 if [[ "${DSH_SKIP_WEB_BUILD:-0}" != "1" ]]; then
-  DSH_CLIENT_TITLE="$DESKTOP_CLIENT_TITLE" pnpm run build
+  DSH_CLIENT_BRAND_NAME="$DESKTOP_CLIENT_BRAND_NAME" \
+    DSH_CLIENT_TITLE="$DESKTOP_CLIENT_TITLE" \
+    DSH_CLIENT_VERSION="$HARNESS_VERSION" \
+    pnpm run build
 fi
 if ! grep -Fq "<title>$DESKTOP_CLIENT_TITLE</title>" "$REPO_ROOT/apps/web/dist/index.html"; then
   print -u2 "the packaged Web client title does not match the Harness version: $DESKTOP_CLIENT_TITLE"
