@@ -13,15 +13,19 @@ import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 // Type-only: pulls the locale plugin's Context merge (ctx.locale).
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-import type { WorkspaceBrowserInjected, WorkspacePickerInjected } from './contract/slots.ts'
+import type {
+  WorkspaceBrowserInjected, WorkspaceDeveloperControlsInjected, WorkspacePickerInjected,
+} from './contract/slots.ts'
 import { createWorkspaceViewStore } from './stores.ts'
 import { WorkspaceBrowser } from './WorkspaceBrowser.tsx'
 import { WorkspacePicker } from './WorkspacePicker.tsx'
+import { WorkspaceDeveloperControls } from './WorkspaceDeveloperControls.tsx'
 import { en, zh, type WorkspaceKey } from './locales.ts'
 
 export type {
   DirectoryFlowOwnerProps, DirectoryFlowSlotName, DirectoryPickingHooks, DirectoryPickingInjected,
   WorkspaceBrowserInjected, WorkspaceBrowserProps, WorkspacePickerInjected, WorkspacePickerProps,
+  WorkspaceDeveloperControlsInjected, WorkspaceDeveloperControlsProps,
 } from './contract/slots.ts'
 export type { WorkspaceKey } from './locales.ts'
 
@@ -108,6 +112,13 @@ export function apply(ctx: ClientContext): void {
     createWorkspace: input => ctx.workspaces.create(input),
     hooks: { directoryFlow: pickerFlowSource },
   })
+  const developerControlsInjected = (): WorkspaceDeveloperControlsInjected => ({
+    openPathWith: (workspaceId, application) => ctx.workspaces.openPathWith(workspaceId, application),
+    repository: workspaceId => ctx.workspaces.repository(workspaceId),
+    createBranch: (workspaceId, branch) => ctx.workspaces.createBranch(workspaceId, branch),
+    createWorktree: (workspaceId, branch) => ctx.workspaces.createWorktree(workspaceId, branch),
+    startSession: (workspaceId) => { ctx.workspaces.startSession(workspaceId) },
+  })
   // Each registration declares its directory-flow child in the same call;
   // slot injection follows both the owner and declaration HMR lifetimes.
   ctx.slots.inject('sidebar.workspaces', () => ctx.slots.register(
@@ -128,5 +139,15 @@ export function apply(ctx: ClientContext): void {
       locale: NS,
     },
     WorkspacePicker,
+  ))
+  ctx.slots.inject('conversation.session.header.utilities', () => ctx.slots.register(
+    {
+      name: 'conversation.session.header.utilities',
+      id: 'workspace-developer-controls',
+      inject: developerControlsInjected,
+      locale: NS,
+      order: 100,
+    },
+    WorkspaceDeveloperControls,
   ))
 }

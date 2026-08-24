@@ -35,6 +35,11 @@ export interface WorkspaceView {
   updatedAt: string
 }
 
+/** Repository state reported for a registered Workspace directory. */
+export type WorkspaceRepositoryView =
+  | { kind: 'directory' }
+  | { kind: 'git'; root: string; branch?: string; detached: boolean; dirty: boolean }
+
 /** Workspace-domain unary methods (the map keys workspace.* of RpcMethodMap). */
 export interface WorkspaceApi {
   /**
@@ -106,4 +111,22 @@ export interface WorkspaceApi {
    */
   archiveSession(request: RpcRequest<{ sessionId: SessionId }>):
   Promise<RpcResponse<{ archivedSessionIds: SessionId[] }>>
+
+  /** Inspect Git state for one registered Workspace. */
+  repository(
+    request: RpcRequest<{ workspaceId: WorkspaceId }>,
+    signal: AbortSignal,
+  ): Promise<RpcResponse<{ repository: WorkspaceRepositoryView }>>
+
+  /** Create and switch to a new branch in the registered Workspace worktree. */
+  createBranch(
+    request: RpcRequest<{ workspaceId: WorkspaceId; branch: string }>,
+    signal: AbortSignal,
+  ): Promise<RpcResponse<{ repository: WorkspaceRepositoryView }>>
+
+  /** Create and register a linked worktree on a new branch. */
+  createWorktree(
+    request: RpcRequest<{ workspaceId: WorkspaceId; branch: string }>,
+    signal: AbortSignal,
+  ): Promise<RpcResponse<{ workspace: WorkspaceView; repository: WorkspaceRepositoryView }>>
 }

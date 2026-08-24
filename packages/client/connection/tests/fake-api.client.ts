@@ -147,6 +147,7 @@ export class FakeApiClient implements IApiClient {
     listDirectory: payload => this.record('host.listDirectory', payload, this.onListDirectory(payload)),
     createDirectory: payload => this.record('host.createDirectory', payload, this.onCreateDirectory(payload)),
     openPath: payload => this.record('host.openPath', payload, this.onOpenPath(payload)),
+    openPathWith: payload => this.record('host.openPathWith', payload, Promise.resolve(ok({ opened: true as const }))),
   }
 
   readonly workspace: IApiClient['workspace'] = {
@@ -167,6 +168,16 @@ export class FakeApiClient implements IApiClient {
     }))),
     archiveSession: (payload: unknown) => this.record('workspace.archiveSession', payload, Promise.resolve(ok({
       archivedSessionIds: [(payload as { sessionId: SessionId }).sessionId],
+    }))),
+    repository: (payload: unknown) => this.record('workspace.repository', payload, Promise.resolve(ok({
+      repository: { kind: 'directory' as const },
+    }))),
+    createBranch: (payload: { branch: string }) => this.record('workspace.createBranch', payload, Promise.resolve(ok({
+      repository: { kind: 'git' as const, root: '/f/ws', branch: payload.branch, detached: false, dirty: false },
+    }))),
+    createWorktree: (payload: { branch: string }) => this.record('workspace.createWorktree', payload, Promise.resolve(ok({
+      workspace: { workspaceId: 'fk-wt' as never, path: '/f/wt', title: payload.branch, sessionIds: [], createdAt: '0', updatedAt: '0' },
+      repository: { kind: 'git' as const, root: '/f/wt', branch: payload.branch, detached: false, dirty: false },
     }))),
   }
 

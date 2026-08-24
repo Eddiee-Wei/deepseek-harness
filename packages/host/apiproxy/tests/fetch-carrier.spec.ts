@@ -159,6 +159,9 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
       async openPath(request) {
         return { rpcId: request.rpcId, result: { ok: true, value: { opened: true as const } } }
       },
+      async openPathWith(request) {
+        return { rpcId: request.rpcId, result: { ok: true, value: { opened: true as const } } }
+      },
     },
     workspace: {
       async list(request) {
@@ -190,6 +193,27 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
       },
       async archiveSession(request) {
         return { rpcId: request.rpcId, result: { ok: true, value: { archivedSessionIds: [request.payload.sessionId] } } }
+      },
+      async repository(request) {
+        return { rpcId: request.rpcId, result: { ok: true, value: { repository: { kind: 'directory' as const } } } }
+      },
+      async createBranch(request) {
+        return {
+          rpcId: request.rpcId,
+          result: { ok: true, value: { repository: { kind: 'git' as const, root: '/w', branch: request.payload.branch, detached: false, dirty: false } } },
+        }
+      },
+      async createWorktree(request) {
+        return {
+          rpcId: request.rpcId,
+          result: {
+            ok: true,
+            value: {
+              workspace: { workspaceId: 'w2' as never, path: '/w/w2', title: 'w2', sessionIds: [], createdAt: 't', updatedAt: 't' },
+              repository: { kind: 'git' as const, root: '/w/w2', branch: request.payload.branch, detached: false, dirty: false },
+            },
+          },
+        }
       },
     },
     agentPresets: {
@@ -422,6 +446,47 @@ describe('unary round trip (handler ⇄ client, no network)', () => {
     const response = await client(api).host.openPath({ path: '/tmp/a.txt' })
     expect(opened).toBe('/tmp/a.txt')
     expect(response.result).toEqual({ ok: true, value: { opened: true } })
+  })
+
+  it('round-trips named application and Workspace Git methods through the wire form', async () => {
+    const api = fakeApi()
+    const calls: unknown[] = []
+    api.host.openPathWith = async (request) => {
+      calls.push(request.payload)
+      return { rpcId: request.rpcId, result: { ok: true, value: { opened: true as const } } }
+    }
+    api.workspace.repository = async (request) => {
+      calls.push(request.payload)
+      return { rpcId: request.rpcId, result: { ok: true, value: { repository: { kind: 'directory' as const } } } }
+    }
+    api.workspace.createBranch = async (request) => {
+      calls.push(request.payload)
+      return { rpcId: request.rpcId, result: { ok: true, value: { repository: { kind: 'git' as const, root: '/repo', branch: request.payload.branch, detached: false, dirty: false } } } }
+    }
+    api.workspace.createWorktree = async (request) => {
+      calls.push(request.payload)
+      return {
+        rpcId: request.rpcId,
+        result: {
+          ok: true,
+          value: {
+            workspace: { workspaceId: 'w2' as never, path: '/worktrees/new', title: 'new', sessionIds: [], createdAt: 't', updatedAt: 't' },
+            repository: { kind: 'git' as const, root: '/worktrees/new', branch: request.payload.branch, detached: false, dirty: false },
+          },
+        },
+      }
+    }
+    const c = client(api)
+    await expect(c.host.openPathWith({ workspaceId: 'w1' as never, application: 'cursor' })).resolves.toMatchObject({ result: { ok: true } })
+    await expect(c.workspace.repository({ workspaceId: 'w1' as never })).resolves.toMatchObject({ result: { ok: true } })
+    await expect(c.workspace.createBranch({ workspaceId: 'w1' as never, branch: 'feature/ui' })).resolves.toMatchObject({ result: { ok: true } })
+    await expect(c.workspace.createWorktree({ workspaceId: 'w1' as never, branch: 'feature/tree' })).resolves.toMatchObject({ result: { ok: true } })
+    expect(calls).toEqual([
+      { workspaceId: 'w1', application: 'cursor' },
+      { workspaceId: 'w1' },
+      { workspaceId: 'w1', branch: 'feature/ui' },
+      { workspaceId: 'w1', branch: 'feature/tree' },
+    ])
   })
 
   it('round-trips skill.list through the wire form', async () => {

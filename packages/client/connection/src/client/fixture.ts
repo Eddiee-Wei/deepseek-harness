@@ -2656,6 +2656,7 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
         return ok(request, { path: target })
       },
       openPath: request => ok(request, { opened: true as const }),
+      openPathWith: request => ok(request, { opened: true as const }),
     },
     workspace: {
       list: request => ok(request, {
@@ -2787,6 +2788,33 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
           emitHost({ type: 'host/archived-sessions-changed', archivedSessionIds: [...archivedSessionIds] })
         }
         return ok(request, { archivedSessionIds: [...archivedSessionIds] })
+      },
+      repository: (request) => {
+        const workspace = workspaces.find(candidate => candidate.workspaceId === request.payload.workspaceId)
+        if (workspace === undefined) {
+          return err(request, { code: 'workspace-not-found', message: 'workspace missing', details: { workspaceId: request.payload.workspaceId } })
+        }
+        return ok(request, { repository: { kind: 'git' as const, root: workspace.path, branch: 'main', detached: false, dirty: false } })
+      },
+      createBranch: request => ok(request, {
+        repository: { kind: 'git' as const, root: '/tmp/fixture', branch: request.payload.branch, detached: false, dirty: false },
+      }),
+      createWorktree: (request) => {
+        const now = new Date().toISOString()
+        const workspace: WorkspaceView = {
+          workspaceId: wid(`fx-ws-${nextWorkspace++}`),
+          path: `/tmp/fixture/worktrees/${request.payload.branch}`,
+          title: request.payload.branch,
+          sessionIds: [],
+          createdAt: now,
+          updatedAt: now,
+        }
+        workspaces.unshift(workspace)
+        emitHost({ type: 'host/workspace-changed', workspace: { ...workspace } })
+        return ok(request, {
+          workspace,
+          repository: { kind: 'git' as const, root: workspace.path, branch: request.payload.branch, detached: false, dirty: false },
+        })
       },
     },
     agentPresets: {
@@ -3196,6 +3224,7 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'host.listDirectory': return this.api.host.listDirectory(request, new AbortController().signal)
       case 'host.createDirectory': return this.api.host.createDirectory(request)
       case 'host.openPath': return this.api.host.openPath(request, new AbortController().signal)
+      case 'host.openPathWith': return this.api.host.openPathWith(request, new AbortController().signal)
       case 'workspace.list': return this.api.workspace.list(request)
       case 'workspace.create': return this.api.workspace.create(request)
       case 'workspace.rename': return this.api.workspace.rename(request)
@@ -3203,6 +3232,9 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'workspace.insertBefore': return this.api.workspace.insertBefore(request)
       case 'workspace.insertSessionBefore': return this.api.workspace.insertSessionBefore(request)
       case 'workspace.archiveSession': return this.api.workspace.archiveSession(request)
+      case 'workspace.repository': return this.api.workspace.repository(request, signal)
+      case 'workspace.createBranch': return this.api.workspace.createBranch(request, signal)
+      case 'workspace.createWorktree': return this.api.workspace.createWorktree(request, signal)
       case 'skill.list': return this.api.skills.list(request)
       case 'agentPreset.list': return this.api.agentPresets.list(request)
       case 'agentPreset.select': return this.api.agentPresets.select(request)

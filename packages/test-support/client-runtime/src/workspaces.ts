@@ -1,7 +1,8 @@
 /** Test-owned workspaces face: the renderer standard-kit observable plus recorded actions. */
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import type {
-  DirectoryListing, IWorkspaces, SessionId, SnapshotStore, WorkspaceId, WorkspaceListState, WorkspaceView,
+  DirectoryListing, HostPathApplication, IWorkspaces, SessionId, SnapshotStore, WorkspaceId,
+  WorkspaceListState, WorkspaceRepositoryView, WorkspaceView,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import { workspaceListState } from './fixtures.ts'
 import type { Stabilizer } from './fixtures.ts'
@@ -95,6 +96,41 @@ export class TestWorkspaces implements IWorkspaces {
   async openPath(path: string): Promise<void> {
     this.calls.push({ method: 'openPath', args: [path] })
     await (this.stubs.get('openPath')?.(path) as Promise<void> | undefined)
+  }
+
+  /** Open a path with one named desktop application. */
+  async openPathWith(workspaceId: WorkspaceId, application: HostPathApplication): Promise<void> {
+    this.calls.push({ method: 'openPathWith', args: [workspaceId, application] })
+    await (this.stubs.get('openPathWith')?.(workspaceId, application) as Promise<void> | undefined)
+  }
+
+  /** Inspect a Workspace repository (recorded; defaults to a plain directory). */
+  async repository(workspaceId: WorkspaceId): Promise<WorkspaceRepositoryView> {
+    this.calls.push({ method: 'repository', args: [workspaceId] })
+    const stub = this.stubs.get('repository')
+    if (stub !== undefined) return await (stub(workspaceId) as Promise<WorkspaceRepositoryView>)
+    return { kind: 'directory' }
+  }
+
+  /** Create a branch (recorded; defaults to a clean Git view). */
+  async createBranch(workspaceId: WorkspaceId, branch: string): Promise<WorkspaceRepositoryView> {
+    this.calls.push({ method: 'createBranch', args: [workspaceId, branch] })
+    const stub = this.stubs.get('createBranch')
+    if (stub !== undefined) return await (stub(workspaceId, branch) as Promise<WorkspaceRepositoryView>)
+    return { kind: 'git', root: '/repo', branch, detached: false, dirty: false }
+  }
+
+  /** Create a linked worktree (recorded; defaults to a minimal Workspace view). */
+  async createWorktree(workspaceId: WorkspaceId, branch: string): Promise<WorkspaceView> {
+    this.calls.push({ method: 'createWorktree', args: [workspaceId, branch] })
+    const stub = this.stubs.get('createWorktree')
+    if (stub !== undefined) return await (stub(workspaceId, branch) as Promise<WorkspaceView>)
+    return {
+      workspaceId: `worktree-${branch}` as WorkspaceId,
+      title: branch,
+      path: `/worktrees/${branch}`,
+      sessionIds: [],
+    } as unknown as WorkspaceView
   }
 
   /**

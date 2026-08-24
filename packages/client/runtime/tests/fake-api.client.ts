@@ -181,6 +181,7 @@ export class FakeApiClient implements IApiClient {
     listDirectory: (payload: unknown) => this.record('host.listDirectory', payload, this.onListDirectory(payload)),
     createDirectory: (payload: unknown) => this.record('host.createDirectory', payload, this.onCreateDirectory(payload)),
     openPath: (payload: unknown) => this.record('host.openPath', payload, this.onOpenPath(payload)),
+    openPathWith: (payload: unknown) => this.record('host.openPathWith', payload, Promise.resolve(ok({ opened: true as const }))),
   }
 
   // The archive-set field defaults at the binding below so list stubs keep
@@ -220,6 +221,16 @@ export class FakeApiClient implements IApiClient {
       this.record('workspace.insertSessionBefore', payload, this.onWorkspaceInsertSessionBefore(payload)),
     archiveSession: (payload: unknown) =>
       this.record('workspace.archiveSession', payload, this.onWorkspaceArchiveSession(payload)),
+    repository: (payload: unknown) => this.record('workspace.repository', payload, Promise.resolve(ok({
+      repository: { kind: 'directory' as const },
+    }))),
+    createBranch: (payload: { branch: string }) => this.record('workspace.createBranch', payload, Promise.resolve(ok({
+      repository: { kind: 'git' as const, root: '/f/ws', branch: payload.branch, detached: false, dirty: false },
+    }))),
+    createWorktree: (payload: { branch: string }) => this.record('workspace.createWorktree', payload, Promise.resolve(ok({
+      workspace: fakeWorkspace('fk-wt'),
+      repository: { kind: 'git' as const, root: '/f/wt', branch: payload.branch, detached: false, dirty: false },
+    }))),
   }
 
   // Payloads stay `unknown` (lint-lane note above); response rows are the real

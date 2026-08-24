@@ -360,6 +360,25 @@ describe('WorkspaceRuntime', () => {
     await expect(workspaces.openPath('/missing')).rejects.toThrow(/path open failed/)
   })
 
+  it('projects native application and Workspace Git requests through the object layer', async () => {
+    const ctx = new Context()
+    const api = new FakeApiClient()
+    const sessions = new SessionRuntime(ctx, api, fakeRemote())
+    const workspaces = new WorkspaceRuntime(ctx, api, sessions)
+    await expect(workspaces.openPathWith(wid('alpha'), 'cursor')).resolves.toBeUndefined()
+    await expect(workspaces.repository(wid('alpha'))).resolves.toEqual({ kind: 'directory' })
+    await expect(workspaces.createBranch(wid('alpha'), 'feature/ui')).resolves.toMatchObject({
+      kind: 'git', branch: 'feature/ui', dirty: false,
+    })
+    await expect(workspaces.createWorktree(wid('alpha'), 'feature/tree')).resolves.toMatchObject({
+      workspaceId: 'fk-wt',
+    })
+    expect(api.callsOf('host.openPathWith')).toEqual([{ workspaceId: 'alpha', application: 'cursor' }])
+    expect(api.callsOf('workspace.repository')).toEqual([{ workspaceId: 'alpha' }])
+    expect(api.callsOf('workspace.createBranch')).toEqual([{ workspaceId: 'alpha', branch: 'feature/ui' }])
+    expect(api.callsOf('workspace.createWorktree')).toEqual([{ workspaceId: 'alpha', branch: 'feature/tree' }])
+  })
+
   it('deletes a Workspace or preserves it when the Host rejects deletion', async () => {
     const ctx = new Context()
     const api = new FakeApiClient()

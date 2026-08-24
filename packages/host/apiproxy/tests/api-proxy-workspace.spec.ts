@@ -13,7 +13,7 @@ import UserQuestionService from '@deepseek-ai/dsh-user-questions'
 import { DirectoryPickerError } from '@deepseek-ai/dsh-host-directory-picker'
 import type { DirectoryPickerCapability } from '@deepseek-ai/dsh-host-directory-picker'
 import WorkspaceRegistry from '@deepseek-ai/dsh-workspace'
-import type { HostFrame, WorkspaceId } from '@deepseek-ai/dsh-host-apiproxy/api'
+import type { HostFrame, HostPathApplication, WorkspaceId } from '@deepseek-ai/dsh-host-apiproxy/api'
 import type { RpcRequest, RpcResponse } from '@deepseek-ai/dsh-host-apiproxy/api/rpc'
 import { RpcId } from '@deepseek-ai/dsh-host-apiproxy/api/rpc'
 import { createApiProxy } from '@deepseek-ai/dsh-host-apiproxy'
@@ -63,6 +63,7 @@ async function harness(
   picker: DirectoryPickerCapability = { kind: 'native', pick: async () => null },
   extras: {
     openPath?: (path: string, signal: AbortSignal) => Promise<void>
+    openPathWith?: (path: string, application: HostPathApplication, signal: AbortSignal) => Promise<void>
     canOpenPath?: () => boolean
   } = {},
 ) {
@@ -106,6 +107,7 @@ async function harness(
     defaultModelSelection: () => ({ provider: 'test', model: 'test-model' }),
     cwd: root,
     ...extras.openPath === undefined ? {} : { openPath: extras.openPath },
+    ...extras.openPathWith === undefined ? {} : { openPathWith: extras.openPathWith },
     ...extras.canOpenPath === undefined ? {} : { canOpenPath: extras.canOpenPath },
   })
   return { api, ctx, storageDomain, root }
@@ -257,6 +259,27 @@ describe('host.openPath', () => {
     const pending = api.host.openPath(request({ path: '/tmp/a.txt' }), abort.signal)
     abort.abort()
     expect((await pending).result).toMatchObject({ ok: false, error: { code: 'cancelled' } })
+  })
+})
+
+describe('host.openPathWith', () => {
+  it('resolves only a registered Workspace id before invoking the named application', async () => {
+    const opened: Array<[string, HostPathApplication]> = []
+    const { api, root } = await harness(undefined, undefined, {
+      openPathWith: async (path, application) => { opened.push([path, application]) },
+    })
+    const path = stageDir(root, 'open-with')
+    const workspace = expectOk(await api.workspace.create(request({ path }))).workspace
+    expectOk(await api.host.openPathWith(
+      request({ workspaceId: workspace.workspaceId, application: 'cursor' }),
+      new AbortController().signal,
+    ))
+    expect(opened).toEqual([[path, 'cursor']])
+    expect((await api.host.openPathWith(
+      request({ workspaceId: 'missing' as WorkspaceId, application: 'finder' }),
+      new AbortController().signal,
+    )).result)
+      .toMatchObject({ ok: false, error: { code: 'workspace-not-found' } })
   })
 })
 

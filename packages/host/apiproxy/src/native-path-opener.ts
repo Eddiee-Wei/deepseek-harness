@@ -25,6 +25,16 @@ export interface PathOpenerInternals {
   run?: PathOpenerRunner
 }
 
+/** macOS application destinations exposed by the desktop Workspace launcher. */
+export type NativePathApplication = 'vscode' | 'cursor' | 'finder' | 'terminal'
+
+const MAC_APPLICATION_NAMES: Readonly<Record<NativePathApplication, string>> = {
+  vscode: 'Visual Studio Code',
+  cursor: 'Cursor',
+  finder: 'Finder',
+  terminal: 'Terminal',
+}
+
 /** Documents a browser renders, as opposed to ones an editor merely edits. */
 const BROWSER_DOCUMENTS = new Set(['.html', '.htm', '.xhtml', '.svg'])
 
@@ -199,4 +209,26 @@ export function openNativeTextFile(
   internals: PathOpenerInternals = {},
 ): Promise<void> {
   return openNativePathWithIntent(path, signal, 'text-editor', internals)
+}
+
+/**
+ * Open a path in one named macOS application without a shell.
+ * @param path - absolute or host-resolvable path.
+ * @param application - supported desktop destination.
+ * @param signal - caller/connection lifetime.
+ * @param internals - platform and runner hooks for deterministic tests.
+ * @returns completion after LaunchServices accepts the request.
+ */
+export async function openNativePathInApplication(
+  path: string,
+  application: NativePathApplication,
+  signal: AbortSignal,
+  internals: PathOpenerInternals = {},
+): Promise<void> {
+  const platform = internals.platform ?? process.platform
+  if (platform !== 'darwin') {
+    throw new Error(`named application opener is unsupported on ${platform}`)
+  }
+  const run = internals.run ?? runNativeCommand
+  await run('open', ['-a', MAC_APPLICATION_NAMES[application], path], signal)
 }

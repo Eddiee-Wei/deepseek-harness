@@ -78,6 +78,7 @@ function scriptedApi(overrides: {
       listDirectory: r => ok(r, { path: '/t', home: '/t', crumbs: [], entries: [], truncated: false }),
       createDirectory: r => ok(r, { path: '/t/new' }),
       openPath: r => ok(r, { opened: true as const }),
+      openPathWith: r => ok(r, { opened: true as const }),
       ...overrides.host,
     },
     workspace: {
@@ -88,6 +89,12 @@ function scriptedApi(overrides: {
       insertBefore: r => ok(r, { workspaceIds: [r.payload.workspaceId] }),
       insertSessionBefore: r => ok(r, { workspace: { workspaceId: 'w1' as never, path: '/t', title: 't', sessionIds: [], createdAt: '0', updatedAt: '0' } }),
       archiveSession: r => ok(r, { archivedSessionIds: [r.payload.sessionId] }),
+      repository: r => ok(r, { repository: { kind: 'directory' as const } }),
+      createBranch: r => ok(r, { repository: { kind: 'git' as const, root: '/t', branch: r.payload.branch, detached: false, dirty: false } }),
+      createWorktree: r => ok(r, {
+        workspace: { workspaceId: 'w2' as never, path: '/t/w2', title: 'w2', sessionIds: [], createdAt: '0', updatedAt: '0' },
+        repository: { kind: 'git' as const, root: '/t/w2', branch: r.payload.branch, detached: false, dirty: false },
+      }),
     },
     skills: { list: r => ok(r, { skills: [] }), ...overrides.skills },
     agentPresets: {

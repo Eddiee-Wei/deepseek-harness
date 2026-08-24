@@ -6,6 +6,8 @@
 
 窗口在保留 DeepSeek Harness 品牌与能力的前提下对齐 Codex 桌面页面格式：紧凑的原生标题栏、常驻的左侧工作区／会话导航、克制的对话画布、居中的输入框，以及现有详情／评审栏。外壳只注入 `html[data-dsh-desktop='macos']`；客户端 CSS 通过这个标记为原生标题栏留白并调整桌面几何。等高的透明 AppKit 视图会把单次鼠标按下事件交给 `NSWindow.performDrag(with:)`，因此拖动顶部区域会移动原生窗口，同时不会把 Web 内容变成拖拽目标；双击该区域则执行窗口的原生缩放动作。浏览器部署保持原有展示。
 
+非空白 macOS 会话会在会话标题栏提供紧凑的工作区启动器。它可以在 Visual Studio Code、Cursor、Finder 或终端中打开已注册工作区，并提供仓库设置，用于查看 Git 状态、创建并切换到新分支，或在新分支上创建关联工作树。浏览器只发送已注册的工作区 ID；Host 解析规范路径，并以固定参数、无 shell 的方式启动原生 `open` 和 `git` 进程。创建分支或工作树会拒绝脏仓库及已存在的分支名；关联工作树创建在 DSH 私有主目录下，并通过常规工作区服务注册。
+
 ## 本地构建
 
 首个版本面向 Apple Silicon 上的 macOS 13 或更高版本，需要 arm64 Node.js、Xcode Command Line Tools，以及已经安装依赖的 workspace。

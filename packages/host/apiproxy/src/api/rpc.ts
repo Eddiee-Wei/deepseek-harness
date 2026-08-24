@@ -41,6 +41,11 @@ export interface RpcErrorDetailsMap {
   'workspace-invalid-path': { path: string }
   'workspace-name-conflict': { name: string }
   'workspace-move-invalid': { workspaceId: string; sessionId: SessionId; beforeSessionId?: SessionId }
+  'workspace-not-git': {}
+  'workspace-git-dirty': {}
+  'workspace-branch-invalid': {}
+  'workspace-branch-exists': {}
+  'workspace-worktree-exists': {}
   'directory-unreadable': { path: string }
   'directory-exists': { path: string }
   'directory-create-failed': { path: string }

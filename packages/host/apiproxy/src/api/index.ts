@@ -47,13 +47,13 @@ export type {
   ModelReasoningEffort, ModelSelection, PromptContentPart, QueueAction, SessionModels,
   SessionListMetadata, SessionProjectionsBlock, SessionSearchItem, SessionsApi, SessionSummary,
 } from './sessions.ts'
-export type { DirectoryEntry, DirectoryListing, HostApi } from './host.ts'
+export type { DirectoryEntry, DirectoryListing, HostApi, HostPathApplication } from './host.ts'
 export type {
   SubagentAddress, SubagentCatalog, SubagentInterruptReceipt, SubagentListEntry,
   SubagentPromptReceipt, SubagentsApi,
 } from './subagents.ts'
 export type { JobView } from './jobs.ts'
-export type { WorkspaceApi, WorkspaceId, WorkspaceView } from './workspace.ts'
+export type { WorkspaceApi, WorkspaceId, WorkspaceRepositoryView, WorkspaceView } from './workspace.ts'
 export type { SkillsApi, SkillEntry } from './skills.ts'
 export type { AgentPresetsApi, AgentPresetEntry } from './agent-presets.ts'
 export type { EventsApi, MuxFrame, HostFrame, QueuedInboxItem, ToolCallView, ToolEventView, ToolResultView } from './events.ts'

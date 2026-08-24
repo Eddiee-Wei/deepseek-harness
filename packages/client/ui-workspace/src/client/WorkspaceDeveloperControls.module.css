@@ -1,0 +1,196 @@
+.launcher {
+  display: inline-flex;
+  align-items: stretch;
+  height: 36px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+  box-shadow: var(--dsw-shadow-lv1);
+}
+
+.launcher:hover,
+.launcher[aria-expanded='true'] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.launcher:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 2px;
+}
+
+.launcherIcon,
+.launcherChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.launcherIcon {
+  width: 38px;
+}
+
+.launcherChevron {
+  width: 32px;
+  border-left: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.menu {
+  min-width: 220px;
+}
+
+.dialog {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.workspaceIdentity {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.workspaceIdentity > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--dsw-alias-brand-primary);
+}
+
+.workspaceIdentity div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.workspaceIdentity strong {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.workspaceIdentity span,
+.muted,
+.branchField small {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repositoryCard {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.repositoryCard dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.repositoryCard dl > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.repositoryCard dt,
+.repositoryCard dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.repositoryCard dt {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.repositoryCard dd {
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clean,
+.dirty {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.clean {
+  background: var(--dsw-alias-success-bg);
+  color: var(--dsw-alias-success-primary);
+}
+
+.dirty {
+  background: var(--dsw-alias-warning-bg);
+  color: var(--dsw-alias-warning-primary);
+}
+
+.notice,
+.error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.notice {
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.error {
+  display: grid;
+  gap: 2px;
+  background: var(--dsw-alias-error-bg);
+  color: var(--dsw-alias-error-primary);
+}
+
+.branchField {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.branchField > span:not(:last-child) {
+  font-weight: 500;
+}
+
+.branchField > :global(span) {
+  width: 100%;
+}
+
+.branchField small {
+  white-space: normal;
+}
+
+@media (max-width: 700px) {
+  .launcherChevron {
+    display: none;
+  }
+
+  .launcherIcon {
+    width: 34px;
+  }
+}

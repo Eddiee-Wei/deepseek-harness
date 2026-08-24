@@ -23,13 +23,13 @@
  * contract and the same occupant.
  */
 import type { HostDescriptionSource } from '@deepseek-ai/dsh-client-connection/client'
-import type { HostObservable, PropsHooks, PropsLocale, PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
+import type { HostObservable, InjectFace, PropsHooks, PropsLocale, PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pull the owner SlotMap merges into programs that resolve the
 // runtime shares below.
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {
-  SessionId, SessionSearchResultItem, WorkspaceId, WorkspaceView,
+  HostPathApplication, SessionId, SessionSearchResultItem, WorkspaceId, WorkspaceRepositoryView, WorkspaceView,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import type { createWorkspaceViewStore } from '../stores.ts'
 
@@ -168,4 +168,24 @@ export type WorkspacePickerProps =
   & PropsRenderSlots<'conversation.hero.workspace.directoryFlow'>
   & Omit<WorkspacePickerInjected, 'hooks'>
   & DirectoryPickingHooks
+  & PropsLocale<'workspace'>
+
+/** Host actions consumed by the current-Workspace developer launcher. */
+export interface WorkspaceDeveloperControlsInjected {
+  /** Open the current Workspace in a named macOS application. */
+  openPathWith: (workspaceId: WorkspaceId, application: HostPathApplication) => Promise<void>
+  /** Inspect the current Workspace's repository state. */
+  repository: (workspaceId: WorkspaceId) => Promise<WorkspaceRepositoryView>
+  /** Create and switch the current worktree to a new branch. */
+  createBranch: (workspaceId: WorkspaceId, branch: string) => Promise<WorkspaceRepositoryView>
+  /** Create and register a linked worktree on a new branch. */
+  createWorktree: (workspaceId: WorkspaceId, branch: string) => Promise<WorkspaceView>
+  /** Open or create the linked Workspace's blank Session. */
+  startSession: (workspaceId: WorkspaceId) => void
+}
+
+/** Full props for the conversation-header Workspace developer launcher. */
+export type WorkspaceDeveloperControlsProps =
+  PropsRuntime<'conversation.session.header.utilities'>
+  & InjectFace<WorkspaceDeveloperControlsInjected>
   & PropsLocale<'workspace'>

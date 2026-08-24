@@ -2,8 +2,8 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import type {
-  DirectoryListing, IApiClient, RpcError,
-  SessionId, WorkspaceId, WorkspaceView,
+  DirectoryListing, HostPathApplication, IApiClient, RpcError,
+  SessionId, WorkspaceId, WorkspaceRepositoryView, WorkspaceView,
 } from '@deepseek-ai/dsh-api-remotes/client'
 import type { SnapshotStore } from '../contract/store.ts'
 import { createSnapshotStore } from '../contract/store.ts'
@@ -247,6 +247,34 @@ export class WorkspaceRuntime implements IWorkspaces {
     if (!response.result.ok) {
       throw new Error(`path open failed: ${response.result.error.message}`)
     }
+  }
+
+  /** Open one registered Workspace in a named desktop application. */
+  async openPathWith(workspaceId: WorkspaceId, application: HostPathApplication): Promise<void> {
+    const response = await this.api.host.openPathWith({ workspaceId, application })
+    if (!response.result.ok) throw new Error(response.result.error.message)
+  }
+
+  /** Inspect Git state for one registered Workspace. */
+  async repository(workspaceId: WorkspaceId): Promise<WorkspaceRepositoryView> {
+    const response = await this.api.workspace.repository({ workspaceId })
+    if (!response.result.ok) throw new Error(response.result.error.message)
+    return response.result.value.repository
+  }
+
+  /** Create and switch to a new branch in the current worktree. */
+  async createBranch(workspaceId: WorkspaceId, branch: string): Promise<WorkspaceRepositoryView> {
+    const response = await this.api.workspace.createBranch({ workspaceId, branch })
+    if (!response.result.ok) throw new Error(response.result.error.message)
+    return response.result.value.repository
+  }
+
+  /** Create and register a linked worktree on a new branch. */
+  async createWorktree(workspaceId: WorkspaceId, branch: string): Promise<WorkspaceView> {
+    const response = await this.api.workspace.createWorktree({ workspaceId, branch })
+    if (!response.result.ok) throw new Error(response.result.error.message)
+    await this.manager.refresh()
+    return response.result.value.workspace
   }
 
   /**

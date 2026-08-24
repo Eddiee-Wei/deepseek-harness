@@ -1,0 +1,20 @@
+- dialog "Workspace settings":
+  - heading "Workspace settings" [level=2]
+  - button "Close":
+    - img
+  - paragraph: Inspect the repository and create a branch or an isolated worktree.
+  - img
+  - strong: developer-controls
+  - text: {{cwd}}
+  - term: Repository
+  - definition: {{cwd}}
+  - term: Current branch
+  - definition: main
+  - text: Working tree clean New branch name
+  - img
+  - textbox "New branch name Create branch switches this workspace. Create worktree keeps it in place and registers an isolated workspace.":
+    - /placeholder: For example, feature/new-ui
+  - text: Create branch switches this workspace. Create worktree keeps it in place and registers an isolated workspace.
+  - button "Cancel"
+  - button "Create branch" [disabled]
+  - button "Create worktree" [disabled]

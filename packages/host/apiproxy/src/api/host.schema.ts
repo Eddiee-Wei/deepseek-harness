@@ -6,6 +6,7 @@ import { z } from 'zod'
 import type { DirectoryEntry } from './host.ts'
 import type { RequestPayload, ResponseValue } from './rpc-map.ts'
 import type { Wire } from './rpc.schema.ts'
+import { workspaceIdSchema } from './sessions.schema.ts'
 
 /** host.describe request payload (empty object literal). */
 export const hostDescribeRequestSchema = z.object({}) satisfies z.ZodType<Wire<RequestPayload<'host.describe'>>>
@@ -73,3 +74,14 @@ export const hostOpenPathRequestSchema = z.object({
 export const hostOpenPathValueSchema = z.object({
   opened: z.literal(true),
 }) satisfies z.ZodType<Wire<ResponseValue<'host.openPath'>>>
+
+/** host.openPathWith request payload. */
+export const hostOpenPathWithRequestSchema = z.object({
+  workspaceId: workspaceIdSchema,
+  application: z.enum(['vscode', 'cursor', 'finder', 'terminal']),
+}) satisfies z.ZodType<Wire<RequestPayload<'host.openPathWith'>>>
+
+/** host.openPathWith response value. */
+export const hostOpenPathWithValueSchema = z.object({
+  opened: z.literal(true),
+}) satisfies z.ZodType<Wire<ResponseValue<'host.openPathWith'>>>

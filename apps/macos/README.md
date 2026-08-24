@@ -6,6 +6,8 @@ This directory owns the Apple Silicon desktop distribution. It is an additive pr
 
 The window follows the Codex desktop page format while retaining DeepSeek Harness identity and features: a compact native title bar, persistent left workspace/session navigation, a quiet conversation canvas, a centered composer, and the existing details/review column. The shell injects only `html[data-dsh-desktop='macos']`; narrowly scoped client CSS uses that marker for native title-bar clearance and desktop geometry. An invisible AppKit view matching that clearance hands a single mouse-down event to `NSWindow.performDrag(with:)`, so dragging the top strip moves the native window without turning Web content into a drag target; a double-click invokes the window's native zoom action. Browser deployments keep their existing presentation.
 
+Non-blank macOS sessions expose a compact Workspace launcher in the session header. It opens the registered Workspace in Visual Studio Code, Cursor, Finder, or Terminal and provides repository settings for inspecting Git state, creating and switching to a branch, or creating a linked worktree on a new branch. The browser sends only the registered Workspace id; the host resolves the canonical path and runs fixed-argument native `open` and `git` processes without a shell. Branch and worktree creation rejects dirty repositories and existing branch names, while the linked worktree is created under the private DSH home directory and registered through the normal Workspace service.
+
 ## Local build
 
 The first release targets macOS 13 or newer on Apple Silicon. It requires an arm64 Node.js binary, the Xcode command-line tools, and an installed workspace.

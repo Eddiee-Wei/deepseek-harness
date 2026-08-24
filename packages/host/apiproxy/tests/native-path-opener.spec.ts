@@ -16,7 +16,9 @@ vi.mock('node:child_process', () => ({ execFile: execFileMock }))
 
 import { release as osRelease } from 'node:os'
 import { describe, expect, it, vi } from 'vitest'
-import { canOpenNativePath, openNativePath, openNativeTextFile, type PathOpenerRunner } from '../src/native-path-opener.ts'
+import {
+  canOpenNativePath, openNativePath, openNativePathInApplication, openNativeTextFile, type PathOpenerRunner,
+} from '../src/native-path-opener.ts'
 
 const signal = () => new AbortController().signal
 
@@ -25,6 +27,14 @@ describe('native path opener', () => {
     const run = vi.fn<PathOpenerRunner>(async () => ({ stdout: '', stderr: '' }))
     await openNativePath('/Users/test/file.txt', signal(), { platform: 'darwin', run })
     expect(run).toHaveBeenCalledWith('open', ['/Users/test/file.txt'], expect.any(AbortSignal))
+  })
+
+  it('opens a Workspace in a named macOS application without a shell', async () => {
+    const run = vi.fn<PathOpenerRunner>(async () => ({ stdout: '', stderr: '' }))
+    await openNativePathInApplication('/Users/test/project', 'vscode', signal(), { platform: 'darwin', run })
+    expect(run).toHaveBeenCalledWith(
+      'open', ['-a', 'Visual Studio Code', '/Users/test/project'], expect.any(AbortSignal),
+    )
   })
 
   it('bypasses macOS file associations for text documents', async () => {

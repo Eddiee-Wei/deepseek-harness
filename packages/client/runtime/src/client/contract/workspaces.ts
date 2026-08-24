@@ -6,7 +6,9 @@
  * the concrete class. Widening this interface is the explicit act of
  * widening what features may do to the workspaces domain.
  */
-import type { DirectoryListing, SessionId, WorkspaceId, WorkspaceView } from '@deepseek-ai/dsh-api-remotes/client'
+import type {
+  DirectoryListing, HostPathApplication, SessionId, WorkspaceId, WorkspaceRepositoryView, WorkspaceView,
+} from '@deepseek-ai/dsh-api-remotes/client'
 import type { WorkspaceListState } from '../workspaces/service.ts'
 import type { ObservableSnapshot } from './store.ts'
 
@@ -58,6 +60,14 @@ export interface IWorkspaces {
    * @param path - absolute or host-resolvable path.
    */
   openPath(path: string): Promise<void>
+  /** Open one registered Workspace in a named desktop application. */
+  openPathWith(workspaceId: WorkspaceId, application: HostPathApplication): Promise<void>
+  /** Inspect Git state for one registered Workspace. */
+  repository(workspaceId: WorkspaceId): Promise<WorkspaceRepositoryView>
+  /** Create and switch to a new branch in the current worktree. */
+  createBranch(workspaceId: WorkspaceId, branch: string): Promise<WorkspaceRepositoryView>
+  /** Create and register a linked worktree on a new branch. */
+  createWorktree(workspaceId: WorkspaceId, branch: string): Promise<WorkspaceView>
   /**
    * Rename a Workspace.
    * @param workspaceId - target workspace.

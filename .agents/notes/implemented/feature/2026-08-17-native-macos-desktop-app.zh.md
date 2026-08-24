@@ -14,6 +14,8 @@ DeepSeek Harness 已有适合桌面编程 agent 的浏览器表层、会话与�
 
 外壳会在文档首次绘制前注入 `html[data-dsh-desktop='macos']`。客户端包只通过该标记为原生标题栏留白并进行少量桌面几何调整。对应的原生拖拽视图会把原始鼠标按下事件交给 `NSWindow.performDrag(with:)`；系统窗口移动因此只发生在标题栏留白区域，不依赖 WebKit 命中测试，也不会让整个窗口背景都可拖动。可见产品身份仍是 DeepSeek Harness，窗口组合则遵循 Codex 桌面布局：原生窗口装饰、常驻导航侧栏、对话画布、输入框和可选详情栏。
 
+Session 区头的 Workspace 开发者控件仍属于共用 Web 客户端，而不是原生外壳。它可在四个固定 macOS 应用之一打开已注册 Workspace，并通过仅限回环地址的 Host RPC 方法展示 Git 仓库状态。创建分支会拒绝脏的当前 worktree；创建关联 worktree 会把目标目录限定在 Harness 持有的家目录下，只注册已成功创建的路径，并在其中启动普通 Session。Git 与 `open` 均通过固定可执行文件及参数数组调用，不经过 shell，也不接收调用方提供的命令字符串。这样，原生桌面操作仍位于轻量展示与 Host 集成层，不改变 agent loop、工具、权限、会话或插件语义。
+
 每次启动都让 Web 服务器绑定 `127.0.0.1` 的 OS 随机端口，并生成一个 256 位、URL 安全的引导 token。`DSH_WEB_ACCESS_TOKEN` 通过子进程环境携带 token，不增加公开 CLI 参数，也不进入进程参数。顶层 GET query 通过匹配后，webserver 会把 token 换成仅限当前宿主、HttpOnly、SameSite=Strict 的 cookie，通过重定向移除 query，并拒绝其他所有未携带该 cookie 的 HTTP 与 upgrade 请求。token 使用常量时间比较。未配置 token 的 Web 组合保持此前的无认证行为。
 
 WebKit 使用非持久数据存储，导航只允许当前受管的回环 origin。用户点击的外部链接交给系统浏览器。App 退出时负责子进程生命周期，先发送 SIGTERM，再用有时间上限的 SIGKILL 兜底。Developer ID 签名启用 hardened runtime；内置 Node.js 只获得其运行时与原生 addon 所需的动态代码和库校验例外。应用不启用 App Sandbox，因为 Harness 支持的工作包含经用户授权的文件系统、终端、子进程和语言服务器访问；这些权限仍由现有 Harness 策略负责。
@@ -34,4 +36,4 @@ WebKit 使用非持久数据存储，导航只允许当前受管的回环 origin
 
 ## 后果
 
-桌面发行物与上游保持接近：多数更新只是普通 workspace 依赖和 Web UI 变化，原生外壳继续只负责少量进程管理与渲染。产物自包含，无需用户安装 Node.js，也不会在运行时下载代码，并关闭最直接的本机回环混淆路径。正式发行仍有严格的 Developer ID 与公证门禁；测试 tag 通道不会削弱它，也不会把 ad hoc 签名产物包装成普通版本。代价是更大的 Apple Silicon 专用 DMG、macOS 专用构建，以及正式版本所需的 Developer ID／公证 secret 管理。首个版本不含自动更新、Intel 二进制、App Store sandbox，也不承诺任意远端部署可以把本地 token 栅栏当作认证系统。
+桌面发行物与上游保持接近：多数更新只是普通 workspace 依赖和 Web UI 变化，原生外壳继续只负责少量进程管理与渲染。产物自包含，无需用户安装 Node.js，也不会在运行时下载代码，并关闭最直接的本机回环混淆路径。开发者快捷操作只作用于 Host 已注册的 Workspace 路径，受管 worktree 目标则是确定性的，并位于源码仓库之外；增加其他编辑器必须显式修改 Host allow-list。正式发行仍有严格的 Developer ID 与公证门禁；测试 tag 通道不会削弱它，也不会把 ad hoc 签名产物包装成普通版本。代价是更大的 Apple Silicon 专用 DMG、macOS 专用构建，以及正式版本所需的 Developer ID／公证 secret 管理。首个版本不含自动更新、Intel 二进制、App Store sandbox，也不承诺任意远端部署可以把本地 token 栅栏当作认证系统。

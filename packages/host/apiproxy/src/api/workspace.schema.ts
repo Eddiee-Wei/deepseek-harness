@@ -7,7 +7,7 @@
 import { z } from 'zod'
 import type { RequestPayload, ResponseValue } from './rpc-map.ts'
 import type { Wire } from './rpc.schema.ts'
-import type { WorkspaceView } from './workspace.ts'
+import type { WorkspaceRepositoryView, WorkspaceView } from './workspace.ts'
 import { sessionIdSchema, workspaceIdSchema } from './sessions.schema.ts'
 
 export { workspaceIdSchema } from './sessions.schema.ts'
@@ -98,3 +98,47 @@ export const workspaceArchiveSessionRequestSchema = z.object({
 export const workspaceArchiveSessionValueSchema = z.object({
   archivedSessionIds: z.array(sessionIdSchema),
 }) satisfies z.ZodType<Wire<ResponseValue<'workspace.archiveSession'>>>
+
+/** Repository state returned by Workspace Git methods. */
+export const workspaceRepositoryViewSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('directory') }),
+  z.object({
+    kind: z.literal('git'),
+    root: z.string(),
+    branch: z.string().optional(),
+    detached: z.boolean(),
+    dirty: z.boolean(),
+  }),
+]) satisfies z.ZodType<Wire<WorkspaceRepositoryView>>
+
+/** workspace.repository request payload. */
+export const workspaceRepositoryRequestSchema = z.object({
+  workspaceId: workspaceIdSchema,
+}) satisfies z.ZodType<Wire<RequestPayload<'workspace.repository'>>>
+
+/** workspace.repository response value. */
+export const workspaceRepositoryValueSchema = z.object({
+  repository: workspaceRepositoryViewSchema,
+}) satisfies z.ZodType<Wire<ResponseValue<'workspace.repository'>>>
+
+const workspaceBranchMutationRequestSchema = z.object({
+  workspaceId: workspaceIdSchema,
+  branch: z.string().trim().min(1).max(240),
+})
+
+/** workspace.createBranch request payload. */
+export const workspaceCreateBranchRequestSchema = workspaceBranchMutationRequestSchema satisfies z.ZodType<Wire<RequestPayload<'workspace.createBranch'>>>
+
+/** workspace.createBranch response value. */
+export const workspaceCreateBranchValueSchema = z.object({
+  repository: workspaceRepositoryViewSchema,
+}) satisfies z.ZodType<Wire<ResponseValue<'workspace.createBranch'>>>
+
+/** workspace.createWorktree request payload. */
+export const workspaceCreateWorktreeRequestSchema = workspaceBranchMutationRequestSchema satisfies z.ZodType<Wire<RequestPayload<'workspace.createWorktree'>>>
+
+/** workspace.createWorktree response value. */
+export const workspaceCreateWorktreeValueSchema = z.object({
+  workspace: workspaceViewSchema,
+  repository: workspaceRepositoryViewSchema,
+}) satisfies z.ZodType<Wire<ResponseValue<'workspace.createWorktree'>>>

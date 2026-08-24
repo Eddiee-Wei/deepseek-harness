@@ -41,7 +41,7 @@ import type {
   ModelCatalogFailure, ModelProviderGroup,
   ModelReasoning, MuxFrame, PromptContentPart, QuestionResponsePayload, SessionListMetadata, SessionProjectionsBlock, SessionSearchItem,
   QueuedInboxItem, SessionSummary, SettingsNamespaceView, SubagentAddress, JobView, ToolEventView,
-  WorkspaceId, WorkspaceView,
+  HostPathApplication, WorkspaceId, WorkspaceView,
 } from './api/index.ts'
 import {
   DEFAULT_SESSION_LOG_COMPRESSION_LEVEL,
@@ -109,7 +109,12 @@ import {
   hasApiRemoteSubagentOwner,
   inspectApiRemoteSession,
 } from '@deepseek-ai/dsh-api-remotes'
-import { canOpenNativePath, openNativePath, openNativeTextFile } from './native-path-opener.ts'
+import {
+  canOpenNativePath, openNativePath, openNativePathInApplication, openNativeTextFile,
+} from './native-path-opener.ts'
+import {
+  createWorkspaceBranch, createWorkspaceWorktree, inspectWorkspaceRepository, WorkspaceGitError,
+} from './workspace-git.ts'
 
 /** Page size when history is called without maxMessages. */
 const DEFAULT_MAX_MESSAGES = 50
@@ -594,6 +599,8 @@ export interface ApiProxyDefaults {
   cwd: string
   /** Native open-with-default-application; injectable for carrier tests. */
   openPath?: (path: string, signal: AbortSignal) => Promise<void>
+  /** Named macOS application hand-off; injectable for carrier tests. */
+  openPathWith?: (path: string, application: HostPathApplication, signal: AbortSignal) => Promise<void>
   /** Native text-editor handoff; injectable for settings-document tests. */
   openTextFile?: (path: string, signal: AbortSignal) => Promise<void>
   /** Validated DEFLATE level for session-log ZIP entries; defaults to 6. */
@@ -1845,6 +1852,21 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     return openTarget(request, path, signal, open)
   }
 
+  /** Open one Host-resolved path in a named desktop application. */
+  function openPathWith(
+    request: RpcRequest<unknown>, path: string, application: HostPathApplication, signal: AbortSignal,
+  ): Promise<RpcResponse<{ opened: true }>> {
+    const open = defaults.openPathWith
+      ?? ((target: string, targetApplication: HostPathApplication, openSignal: AbortSignal) =>
+        openNativePathInApplication(target, targetApplication, openSignal))
+    return openTarget(request, path, signal, (target, openSignal) => open(target, application, openSignal))
+  }
+
+  /** Map one expected Workspace Git refusal onto its stable wire error. */
+  function workspaceGitFailure<T>(request: RpcRequest<unknown>, error: WorkspaceGitError): RpcResponse<T> {
+    return err(request, { code: error.code, message: error.message, details: {} })
+  }
+
   /** Open one Host-resolved text document in a native editor. */
   function openTextFile(
     request: RpcRequest<unknown>, path: string, signal: AbortSignal,
@@ -2818,6 +2840,42 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         }
         return ok(request, { archivedSessionIds: [...ctx.workspaceRegistry.archivedSessionIds] })
       },
+
+      async repository(request, signal) {
+        const workspace = ctx.workspaceRegistry.get(brandWorkspaceId(request.payload.workspaceId))
+        if (workspace === undefined) return workspaceNotFound(request, request.payload.workspaceId)
+        return ok(request, {
+          repository: await inspectWorkspaceRepository(workspace.path, signal),
+        })
+      },
+
+      async createBranch(request, signal) {
+        const workspace = ctx.workspaceRegistry.get(brandWorkspaceId(request.payload.workspaceId))
+        if (workspace === undefined) return workspaceNotFound(request, request.payload.workspaceId)
+        try {
+          const repository = await createWorkspaceBranch(workspace.path, request.payload.branch.trim(), signal)
+          return ok(request, { repository })
+        } catch (error: unknown) {
+          if (error instanceof WorkspaceGitError) return workspaceGitFailure(request, error)
+          throw error
+        }
+      },
+
+      async createWorktree(request, signal) {
+        const workspace = ctx.workspaceRegistry.get(brandWorkspaceId(request.payload.workspaceId))
+        if (workspace === undefined) return workspaceNotFound(request, request.payload.workspaceId)
+        try {
+          const created = await createWorkspaceWorktree(workspace.path, request.payload.branch.trim(), signal)
+          const adopted = await ensureWorkspace(created.path)
+          return ok(request, {
+            workspace: workspaceView(adopted.workspace),
+            repository: created.repository,
+          })
+        } catch (error: unknown) {
+          if (error instanceof WorkspaceGitError) return workspaceGitFailure(request, error)
+          throw error
+        }
+      },
     },
 
     host: {
@@ -2908,6 +2966,12 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
 
       async openPath(request, signal) {
         return openPath(request, request.payload.path, signal)
+      },
+
+      async openPathWith(request, signal) {
+        const workspace = ctx.workspaceRegistry.get(brandWorkspaceId(request.payload.workspaceId))
+        if (workspace === undefined) return workspaceNotFound(request, request.payload.workspaceId)
+        return openPathWith(request, workspace.path, request.payload.application, signal)
       },
     },
 

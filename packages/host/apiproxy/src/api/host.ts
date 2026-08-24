@@ -4,6 +4,10 @@
  */
 
 import type { RpcRequest, RpcResponse } from './rpc.ts'
+import type { WorkspaceId } from './workspace.ts'
+
+/** Named macOS destinations supported by the desktop Workspace launcher. */
+export type HostPathApplication = 'vscode' | 'cursor' | 'finder' | 'terminal'
 
 /** One directory row of a listing: a child entry or a breadcrumb ancestor. */
 export interface DirectoryEntry {
@@ -93,6 +97,12 @@ export interface HostApi {
    */
   openPath(
     request: RpcRequest<{ path: string }>,
+    signal: AbortSignal,
+  ): Promise<RpcResponse<{ opened: true }>>
+
+  /** Open one registered Workspace in a named macOS application. */
+  openPathWith(
+    request: RpcRequest<{ workspaceId: WorkspaceId; application: HostPathApplication }>,
     signal: AbortSignal,
   ): Promise<RpcResponse<{ opened: true }>>
 }
