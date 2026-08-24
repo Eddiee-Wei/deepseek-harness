@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 This directory owns the Apple Silicon desktop distribution. It is an additive presentation and packaging layer over the shipped `dsh web` composition: the Swift AppKit/WebKit shell starts the bundled Node.js and `@deepseek-ai/dsh` CLI, then renders the existing Web client. Agent, session, plugin, tool, permission, settings, and credential behavior remains owned by the normal DeepSeek Harness packages. The shell does not fork `agent-loop` or carry a private agent protocol, which keeps routine upstream updates limited to rebuilding the app and resolving ordinary package changes.
 
-The window follows the Codex desktop page format while retaining DeepSeek Harness identity and features: a compact native title bar, persistent left workspace/session navigation, a quiet conversation canvas, a centered composer, and the existing details/review column. The shell injects only `html[data-dsh-desktop='macos']`; narrowly scoped client CSS uses that marker for native title-bar clearance and desktop geometry, while browser deployments keep their existing presentation.
+The window follows the Codex desktop page format while retaining DeepSeek Harness identity and features: a compact native title bar, persistent left workspace/session navigation, a quiet conversation canvas, a centered composer, and the existing details/review column. The shell injects only `html[data-dsh-desktop='macos']`; narrowly scoped client CSS uses that marker for native title-bar clearance and desktop geometry, while an invisible AppKit drag region matching the clearance keeps window movement native. Browser deployments keep their existing presentation.
 
 ## Local build
 

@@ -4,6 +4,12 @@ import WebKit
 
 private let applicationName = "DeepSeek Harness"
 private let readinessPrefix = "dsh web: "
+private let titlebarDragHeight: CGFloat = 28
+
+/// Native hit region matching the Web client's macOS title-bar clearance.
+private final class TitlebarDragView: NSView {
+    override var mouseDownCanMoveWindow: Bool { true }
+}
 
 private func randomAccessToken() throws -> String {
     var bytes = [UInt8](repeating: 0, count: 32)
@@ -129,8 +135,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         ])
 
         let content = NSView()
+        let titlebarDragView = TitlebarDragView()
+        titlebarDragView.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(webView)
         content.addSubview(loadingView)
+        content.addSubview(titlebarDragView)
         NSLayoutConstraint.activate([
             webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: content.trailingAnchor),
@@ -140,6 +149,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
             loadingView.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             loadingView.topAnchor.constraint(equalTo: content.topAnchor),
             loadingView.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            titlebarDragView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            titlebarDragView.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            titlebarDragView.topAnchor.constraint(equalTo: content.topAnchor),
+            titlebarDragView.heightAnchor.constraint(equalToConstant: titlebarDragHeight),
         ])
 
         window = NSWindow(
