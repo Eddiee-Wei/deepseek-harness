@@ -4,7 +4,7 @@
 
 本目录负责 Apple Silicon 桌面发行物。它是在现有 `dsh web` 组合之上增加的展示与打包层：Swift AppKit／WebKit 外壳启动内置 Node.js 和 `@deepseek-ai/dsh` CLI，再渲染现有 Web 客户端。Agent、会话、插件、工具、权限、设置和凭据行为仍由 DeepSeek Harness 原有包负责。外壳不分叉 `agent-loop`，也不维护私有 agent 协议，因此日常跟进上游更新通常只需要重新构建应用并处理普通依赖变化。
 
-窗口在保留 DeepSeek Harness 品牌与能力的前提下对齐 Codex 桌面页面格式：紧凑的原生标题栏、常驻的左侧工作区／会话导航、克制的对话画布、居中的输入框，以及现有详情／评审栏。外壳只注入 `html[data-dsh-desktop='macos']`；客户端 CSS 通过这个标记为原生标题栏留白并调整桌面几何。等高的透明 AppKit 视图会把原始鼠标按下事件交给 `NSWindow.performDrag(with:)`，因此拖动顶部区域会移动原生窗口，同时不会把 Web 内容变成拖拽目标。浏览器部署保持原有展示。
+窗口在保留 DeepSeek Harness 品牌与能力的前提下对齐 Codex 桌面页面格式：紧凑的原生标题栏、常驻的左侧工作区／会话导航、克制的对话画布、居中的输入框，以及现有详情／评审栏。外壳只注入 `html[data-dsh-desktop='macos']`；客户端 CSS 通过这个标记为原生标题栏留白并调整桌面几何。等高的透明 AppKit 视图会把单次鼠标按下事件交给 `NSWindow.performDrag(with:)`，因此拖动顶部区域会移动原生窗口，同时不会把 Web 内容变成拖拽目标；双击该区域则执行窗口的原生缩放动作。浏览器部署保持原有展示。
 
 ## 本地构建
 
