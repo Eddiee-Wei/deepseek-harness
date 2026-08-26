@@ -17,7 +17,7 @@ pnpm run app:macos
 pnpm run app:macos:dmg
 ```
 
-The app and DMG are written below `.artifacts/macos/`. The build labels both the desktop document and expanded sidebar with `DeepSeek Harness` plus the exact `@deepseek-ai/dsh` version in the synchronized checkout, including any prerelease suffix, instead of using the generic local Web-build identity. It then deploys production workspace packages into the app, copies the current arm64 Node.js executable, starts the deployed CLI with plain bundled Node.js, proves the local access fence, compiles the Swift shell, signs every Mach-O dependency, verifies the app signature, creates and verifies the DMG, and writes a SHA-256 file. The `.app` can be copied to `/Applications` or installed through the DMG. Local builds use ad hoc signing unless `APPLE_SIGNING_IDENTITY` names a Developer ID Application certificate.
+The app and a versioned `DeepSeek-Harness-<Harness version>-macOS-arm64.dmg` are written below `.artifacts/macos/`. The build labels both the desktop document and expanded sidebar with `DeepSeek Harness` plus the exact `@deepseek-ai/dsh` version in the synchronized checkout, including any prerelease suffix, instead of using the generic local Web-build identity. It records that version and the full source revision in the App metadata, deploys production workspace packages, copies the current arm64 Node.js executable, starts the deployed CLI with plain bundled Node.js, proves the local access fence, compiles the Swift shell, signs every Mach-O dependency, verifies the app signature, creates and verifies the DMG, and writes a SHA-256 file. The `.app` can be copied to `/Applications` or installed through the DMG. Local builds use ad hoc signing unless `APPLE_SIGNING_IDENTITY` names a Developer ID Application certificate.
 
 ## Release
 
@@ -30,9 +30,9 @@ The app and DMG are written below `.artifacts/macos/`. The build labels both the
 - `APPLE_TEAM_ID`
 - `APPLE_APP_PASSWORD`
 
-Push a tag such as `app-v0.1.0` to build, Developer ID-sign, notarize, staple, verify, and publish the DMG plus its SHA-256 file in a GitHub Release. The workflow refuses to publish this release class when any Apple credential is missing.
+The suffix of every release tag must equal the exact version in `apps/cli/package.json`; the workflow rejects a mismatched tag before packaging. For a stable Harness version, push a tag such as `app-v0.1.1` to build, Developer ID-sign, notarize, staple, verify, and publish the versioned DMG plus its SHA-256 file in a GitHub Release. The workflow refuses prerelease Harness versions on this channel and refuses publication when any Apple credential is missing.
 
-When Apple credentials are unavailable, a tag such as `test-v0.1.0` publishes an explicitly labeled GitHub Pre-release. That test DMG is forced to use ad hoc signing and is not notarized, even if repository secrets are later configured. The Release warns that macOS may block normal installation and that the artifact is for trusted testing only; users should verify the attached SHA-256 file before opening it. Manual workflow runs produce an artifact without publishing a Release and use ad hoc signing when credentials are absent.
+For a Harness prerelease or when Apple credentials are unavailable, a tag such as `test-v0.1.1-rc.2` publishes an explicitly labeled GitHub Pre-release whose release name and files carry the same exact Harness version. That test DMG is forced to use ad hoc signing and is not notarized, even if repository secrets are later configured. The Release warns that macOS may block normal installation and that the artifact is for trusted testing only; users should verify the attached SHA-256 file before opening it. Manual workflow runs build the exact checked-out Harness version without publishing a Release and use ad hoc signing when credentials are absent.
 
 ## Security and ownership
 

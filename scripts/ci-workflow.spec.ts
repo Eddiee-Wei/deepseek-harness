@@ -249,6 +249,19 @@ describe('macOS release workflow', () => {
     expect(zshSteps).toHaveLength(4)
     for (const step of zshSteps) expect(step.shell).toBe('zsh {0}')
   })
+
+  it('binds every release artifact to the exact bundled Harness version and revision', () => {
+    const source = readFileSync(resolve(root, '.github/workflows/macos-release.yml'), 'utf8')
+
+    expect(source).toContain('release tag version $requested does not match apps/cli/package.json version $harness_version')
+    expect(source).toContain('app-v* is reserved for stable notarized releases')
+    expect(source).toContain('DSH_REQUESTED_VERSION: ${{ inputs.version }}')
+    expect(source).not.toContain("requested='${{ inputs.version }}'")
+    expect(source).toContain('DSH_HARNESS_VERSION_EXPECTED: ${{ steps.version.outputs.harness_version }}')
+    expect(source).toContain('DSH_SOURCE_REVISION: ${{ github.sha }}')
+    expect(source).toContain('DeepSeek-Harness-$harness_version-macOS-arm64')
+    expect(source).not.toContain('.artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg')
+  })
 })
 
 describe('DeepSeek e2e workflow', () => {

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: App version override, for example 0.1.0
+        description: Exact DeepSeek Harness version; defaults to apps/cli/package.json
         required: false
         type: string
   push:
@@ -58,8 +58,11 @@ jobs:
       - name: Resolve app version
         id: version
         shell: zsh {0}
+        env:
+          DSH_REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          requested='${{ inputs.version }}'
+          requested="$DSH_REQUESTED_VERSION"
+          harness_version="$(node -p "require('./apps/cli/package.json').version")"
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             case "$GITHUB_REF_NAME" in
               app-v*) requested="${GITHUB_REF_NAME#app-v}" ;;
@@ -67,17 +70,30 @@ jobs:
               *)
                 print -u2 "unsupported release tag: $GITHUB_REF_NAME"
                 exit 2
-                ;;
+              ;;
             esac
           fi
           if [[ -z "$requested" ]]; then
-            requested="$(node -p "require('./apps/cli/package.json').version.replace(/-.*/, '')")"
+            requested="$harness_version"
           fi
-          if [[ "$requested" != <->.<->.<-> ]]; then
-            print -u2 "version must be numeric semver without a prerelease: $requested"
+          if [[ "$requested" != "$harness_version" ]]; then
+            print -u2 "release tag version $requested does not match apps/cli/package.json version $harness_version"
             exit 2
           fi
-          print "version=$requested" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" == app-v* && "$harness_version" == *-* ]]; then
+            print -u2 "prerelease Harness versions use test-v*; app-v* is reserved for stable notarized releases"
+            exit 2
+          fi
+          app_version="${harness_version%%-*}"
+          app_version="${app_version%%+*}"
+          if [[ "$app_version" != <->.<->.<-> ]]; then
+            print -u2 "Harness version does not provide a numeric macOS bundle version: $harness_version"
+            exit 2
+          fi
+          artifact_basename="DeepSeek-Harness-$harness_version-macOS-arm64"
+          print "harness_version=$harness_version" >> "$GITHUB_OUTPUT"
+          print "app_version=$app_version" >> "$GITHUB_OUTPUT"
+          print "artifact_basename=$artifact_basename" >> "$GITHUB_OUTPUT"
 
       - name: Require credentials for a notarized release
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'app-v')
@@ -111,8 +127,10 @@ jobs:
       - name: Build, sign, notarize, and verify DMG
         shell: zsh {0}
         env:
-          DSH_APP_VERSION: ${{ steps.version.outputs.version }}
+          DSH_HARNESS_VERSION_EXPECTED: ${{ steps.version.outputs.harness_version }}
+          DSH_APP_VERSION: ${{ steps.version.outputs.app_version }}
           DSH_APP_BUILD_NUMBER: ${{ github.run_number }}
+          DSH_SOURCE_REVISION: ${{ github.sha }}
         run: |
           export DSH_NODE_BINARY="$(node -p 'process.execPath')"
           if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" == test-v* ]]; then
@@ -128,10 +146,10 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: DeepSeek-Harness-macOS-arm64-${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.artifact_basename }}
           path: |
-            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg
-            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg.sha256
+            .artifacts/macos/${{ steps.version.outputs.artifact_basename }}.dmg
+            .artifacts/macos/${{ steps.version.outputs.artifact_basename }}.dmg.sha256
           if-no-files-found: error
           retention-days: 14
 
@@ -139,17 +157,18 @@ jobs:
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'app-v')
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
+          name: DeepSeek Harness ${{ steps.version.outputs.harness_version }} for macOS
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
-            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg
-            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg.sha256
+            .artifacts/macos/${{ steps.version.outputs.artifact_basename }}.dmg
+            .artifacts/macos/${{ steps.version.outputs.artifact_basename }}.dmg.sha256
 
       - name: Publish unsigned test Pre-release
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'test-v')
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
-          name: DeepSeek Harness ${{ steps.version.outputs.version }} unsigned macOS test build
+          name: DeepSeek Harness ${{ steps.version.outputs.harness_version }} unsigned macOS test build
           prerelease: true
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -161,5 +180,5 @@ jobs:
 
             Verify the download against the attached `.sha256` file before opening it.
           files: |
-            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg
-            .artifacts/macos/DeepSeek-Harness-macOS-arm64.dmg.sha256
+            .artifacts/macos/${{ steps.version.outputs.artifact_basename }}.dmg
+            .artifacts/macos/${{ steps.version.outputs.artifact_basename }}.dmg.sha256

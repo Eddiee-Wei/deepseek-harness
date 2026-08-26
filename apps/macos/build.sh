@@ -9,7 +9,6 @@ CONTENTS_PATH="$APP_PATH/Contents"
 MACOS_PATH="$CONTENTS_PATH/MacOS"
 RESOURCES_PATH="$CONTENTS_PATH/Resources"
 RUNTIME_PATH="$RESOURCES_PATH/runtime"
-DMG_PATH="$ARTIFACT_ROOT/DeepSeek-Harness-macOS-arm64.dmg"
 BUILD_MODE="${1:-app}"
 
 if [[ "$BUILD_MODE" != "app" && "$BUILD_MODE" != "dmg" ]]; then
@@ -35,12 +34,30 @@ if [[ "$(uname -m)" != "arm64" || "$(file -b "$NODE_SOURCE")" != *"arm64"* ]]; t
 fi
 
 HARNESS_VERSION="$(node -p "require('$REPO_ROOT/apps/cli/package.json').version")"
+EXPECTED_HARNESS_VERSION="${DSH_HARNESS_VERSION_EXPECTED:-$HARNESS_VERSION}"
+if [[ "$EXPECTED_HARNESS_VERSION" != "$HARNESS_VERSION" ]]; then
+  print -u2 "release version $EXPECTED_HARNESS_VERSION does not match the bundled DeepSeek Harness version $HARNESS_VERSION"
+  exit 2
+fi
 DESKTOP_CLIENT_BRAND_NAME="DeepSeek Harness"
 DESKTOP_CLIENT_TITLE="$DESKTOP_CLIENT_BRAND_NAME $HARNESS_VERSION"
 DEFAULT_APP_VERSION="${HARNESS_VERSION%%-*}"
+DEFAULT_APP_VERSION="${DEFAULT_APP_VERSION%%+*}"
 APP_VERSION="${DSH_APP_VERSION:-$DEFAULT_APP_VERSION}"
 APP_BUILD_NUMBER="${DSH_APP_BUILD_NUMBER:-1}"
+SOURCE_REVISION="${DSH_SOURCE_REVISION:-$(git -C "$REPO_ROOT" rev-parse HEAD)}"
 SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:--}"
+DMG_BASENAME="DeepSeek-Harness-$HARNESS_VERSION-macOS-arm64"
+DMG_PATH="$ARTIFACT_ROOT/$DMG_BASENAME.dmg"
+
+if [[ "$APP_VERSION" != <->.<->.<-> ]]; then
+  print -u2 "CFBundleShortVersionString must be numeric semver: $APP_VERSION"
+  exit 2
+fi
+if [[ ! "$SOURCE_REVISION" =~ ^[0-9a-f]{40}$ ]]; then
+  print -u2 "DSH_SOURCE_REVISION must be a full 40-character lowercase Git commit: $SOURCE_REVISION"
+  exit 2
+fi
 
 rm -rf "$ARTIFACT_ROOT"
 mkdir -p "$MACOS_PATH" "$RUNTIME_PATH/node/bin" "$RUNTIME_PATH/app"
@@ -67,6 +84,8 @@ chmod 755 "$RUNTIME_PATH/node/bin/node"
 cp "$SCRIPT_DIR/Info.plist" "$CONTENTS_PATH/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $APP_VERSION" "$CONTENTS_PATH/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_BUILD_NUMBER" "$CONTENTS_PATH/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :DSHHarnessVersion $HARNESS_VERSION" "$CONTENTS_PATH/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :DSHSourceRevision $SOURCE_REVISION" "$CONTENTS_PATH/Info.plist"
 cp "$REPO_ROOT/LICENSE" "$RESOURCES_PATH/LICENSE"
 cp "$REPO_ROOT/THIRD_PARTY_NOTICES.md" "$RESOURCES_PATH/THIRD_PARTY_NOTICES.md"
 cp "$SCRIPT_DIR/licenses/NODE_LICENSE" "$RESOURCES_PATH/NODE_LICENSE"
