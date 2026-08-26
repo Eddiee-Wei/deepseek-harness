@@ -2,6 +2,8 @@
 
 [English](README.md) | 中文
 
+**社区发行版：** 本仓库是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的独立社区维护分支。其 macOS 应用以 **DSH Desktop** 名称发行，是基于 DeepSeek Harness 构建的非官方客户端，未获得 DeepSeek 的赞助、背书或审批。DeepSeek Harness 的版权归 DeepSeek 所有（Copyright (c) 2026 DeepSeek），本仓库依 [MIT License](LICENSE) 使用。
+
 DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的开源 agent harness（智能体框架）。
 
 它采用**一切皆插件**的架构，并由 [Cordis](https://github.com/cordiverse/cordis) 驱动，其设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper)。

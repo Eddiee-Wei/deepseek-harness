@@ -26,7 +26,7 @@ const environment = {
 }
 delete environment.NODE_OPTIONS
 delete environment.NODE_PATH
-const child = spawn(node, [entry, 'web', '--host', '127.0.0.1', '--port', '0'], {
+const child = spawn(node, [entry, 'web', '--host', '127.0.0.1', '--port', '0', '--no-open'], {
   cwd: scratch,
   env: environment,
   stdio: ['ignore', 'pipe', 'pipe'],

@@ -2,7 +2,8 @@ import AppKit
 import Security
 import WebKit
 
-private let applicationName = "DeepSeek Harness"
+private let applicationName = "DSH Desktop"
+private let upstreamProjectURL = URL(string: "https://github.com/deepseek-ai/deepseek-harness")!
 private let readinessPrefix = "dsh web: "
 private let titlebarDragHeight: CGFloat = 28
 
@@ -38,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private var accessToken = ""
     private var logHandle: FileHandle?
     private var outputBuffer = Data()
-    private let outputQueue = DispatchQueue(label: "ai.deepseek.harness.desktop.backend-output")
+    private let outputQueue = DispatchQueue(label: "io.github.eddieewei.dshdesktop.backend-output")
     private var startupTimeout: DispatchWorkItem?
     private var isQuitting = false
     private var terminationReplyPending = false
@@ -124,7 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         spinner.controlSize = .regular
         spinner.startAnimation(nil)
 
-        statusLabel = NSTextField(labelWithString: "Starting DeepSeek Harness…")
+        statusLabel = NSTextField(labelWithString: "Starting the embedded DeepSeek Harness runtime…")
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
         statusLabel.font = .systemFont(ofSize: 15, weight: .medium)
         statusLabel.textColor = .secondaryLabelColor
@@ -174,7 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         window.minSize = NSSize(width: 960, height: 640)
         window.contentView = content
         window.delegate = self
-        window.setFrameAutosaveName("DeepSeekHarnessMainWindow")
+        window.setFrameAutosaveName("DSHDesktopMainWindow")
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -223,6 +224,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
         let helpItem = NSMenuItem()
         let helpMenu = NSMenu(title: "Help")
+        let upstream = NSMenuItem(title: "DeepSeek Harness Upstream", action: #selector(openUpstreamProject), keyEquivalent: "")
+        upstream.target = self
+        helpMenu.addItem(upstream)
+        let attribution = NSMenuItem(title: "Open Source Attribution", action: #selector(openAttribution), keyEquivalent: "")
+        attribution.target = self
+        helpMenu.addItem(attribution)
+        helpMenu.addItem(.separator())
         let logs = NSMenuItem(title: "Open Runtime Log", action: #selector(openLog), keyEquivalent: "")
         logs.target = self
         helpMenu.addItem(logs)
@@ -234,11 +242,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
     private func runtimeURL(_ relativePath: String) throws -> URL {
         guard let resources = Bundle.main.resourceURL else {
-            throw NSError(domain: "DeepSeekHarnessApp", code: 1, userInfo: [NSLocalizedDescriptionKey: "Application resources are missing."])
+            throw NSError(domain: "DSHDesktopApp", code: 1, userInfo: [NSLocalizedDescriptionKey: "Application resources are missing."])
         }
         let url = resources.appendingPathComponent(relativePath)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw NSError(domain: "DeepSeekHarnessApp", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bundled runtime file is missing: \(relativePath)"])
+            throw NSError(domain: "DSHDesktopApp", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bundled runtime file is missing: \(relativePath)"])
         }
         return url
     }
@@ -259,7 +267,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
         let process = Process()
         process.executableURL = node
-        process.arguments = [entry.path, "web", "--host", "127.0.0.1", "--port", "0"]
+        process.arguments = [entry.path, "web", "--host", "127.0.0.1", "--port", "0", "--no-open"]
         process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
         var environment = ProcessInfo.processInfo.environment
         environment["DSH_WEB_ACCESS_TOKEN"] = accessToken
@@ -334,7 +342,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
     private func prepareLogFile() throws -> URL {
         let directory = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/DeepSeek Harness", isDirectory: true)
+            .appendingPathComponent("Library/Logs/DSH Desktop", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent("runtime.log")
         if !FileManager.default.fileExists(atPath: url.path) {
@@ -345,10 +353,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
     private func showFailure(_ message: String) {
         startupTimeout?.cancel()
-        statusLabel.stringValue = "DeepSeek Harness could not start"
+        statusLabel.stringValue = "DSH Desktop could not start"
         let alert = NSAlert()
         alert.alertStyle = .critical
-        alert.messageText = "DeepSeek Harness could not start"
+        alert.messageText = "DSH Desktop could not start"
         alert.informativeText = message
         alert.addButton(withTitle: "Open Log")
         alert.addButton(withTitle: "Quit")
@@ -364,8 +372,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     @objc private func zoomOut() { webView.pageZoom = max(webView.pageZoom - 0.1, 0.6) }
     @objc private func openLog() {
         let url = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/DeepSeek Harness/runtime.log")
+            .appendingPathComponent("Library/Logs/DSH Desktop/runtime.log")
         if FileManager.default.fileExists(atPath: url.path) { NSWorkspace.shared.open(url) }
+    }
+
+    @objc private func openUpstreamProject() {
+        NSWorkspace.shared.open(upstreamProjectURL)
+    }
+
+    @objc private func openAttribution() {
+        guard let url = Bundle.main.url(forResource: "ATTRIBUTION", withExtension: "txt") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
