@@ -1,6 +1,7 @@
 # Agent Note: Community desktop identity and attribution
 
 Status: implemented
+Archived: 2026-09-02
 
 English | [中文](2026-08-26-community-desktop-identity-and-attribution.zh.md)
 

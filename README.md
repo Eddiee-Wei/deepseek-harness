@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-**Community distribution:** This repository is an independently maintained fork of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Its macOS application is distributed as **DSH Desktop**, an unofficial client built on DeepSeek Harness; it is not sponsored, endorsed, or approved by DeepSeek. DeepSeek Harness remains Copyright (c) 2026 DeepSeek and is used under the [MIT License](LICENSE).
+**Community distribution:** This repository is an independently maintained fork of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Its macOS distribution uses the repository-owned DeepSeek Harness name and icon while remaining an unofficial community build; it is not sponsored, endorsed, or approved by DeepSeek. DeepSeek Harness remains Copyright (c) 2026 DeepSeek and is used under the [MIT License](LICENSE).
 
 DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
 

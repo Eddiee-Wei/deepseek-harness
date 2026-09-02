@@ -6,18 +6,24 @@ const root = resolve(import.meta.dirname, '..')
 const read = (path: string): string => readFileSync(resolve(root, path), 'utf8')
 
 describe('macOS desktop distribution', () => {
-  it('uses an independent community identity with visible upstream attribution', () => {
+  it('uses the repository-owned Harness identity with visible community attribution', () => {
     const build = read('apps/macos/build.sh')
     const info = read('apps/macos/Info.plist')
     const icon = read('apps/macos/Sources/IconRasterizer.swift')
+    const shell = read('apps/macos/Sources/main.swift')
 
-    expect(build).toContain('DESKTOP_CLIENT_BRAND_NAME="DSH Desktop"')
-    expect(build).toContain('DSH-Desktop-$HARNESS_VERSION-macOS-arm64')
+    expect(build).toContain('DESKTOP_CLIENT_BRAND_NAME="DeepSeek Harness"')
+    expect(build).toContain('DeepSeek-Harness-$HARNESS_VERSION-macOS-arm64')
     expect(build).toContain('ATTRIBUTION.txt')
-    expect(build).not.toContain('apps/web/public/favicon.svg')
-    expect(info).toContain('<string>io.github.eddieewei.dshdesktop</string>')
+    expect(build).toContain('apps/web/public/favicon.svg')
+    expect(info).toContain('<string>io.github.eddieewei.deepseek-harness</string>')
+    expect(info).toContain('<string>DeepSeek Harness</string>')
     expect(info).toContain('<string>https://github.com/deepseek-ai/deepseek-harness</string>')
-    expect(icon).toContain('let mark = ">_" as NSString')
+    expect(icon).toContain('NSImage(contentsOf: sourceURL)')
+    expect(icon).not.toContain('let mark = ">_" as NSString')
+    expect(shell).toContain('Open User Skills Folder')
+    expect(shell).toContain('Open Local Data Folder')
+    expect(shell).toContain('Open Application Resources')
   })
 
   it('keeps the authenticated loopback runtime inside the App instead of opening a browser', () => {

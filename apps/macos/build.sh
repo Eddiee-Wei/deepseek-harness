@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="${0:A:h}"
 REPO_ROOT="${SCRIPT_DIR:h:h}"
 ARTIFACT_ROOT="$REPO_ROOT/.artifacts/macos"
-APP_PATH="$ARTIFACT_ROOT/DSH Desktop.app"
+APP_PATH="$ARTIFACT_ROOT/DeepSeek Harness.app"
 CONTENTS_PATH="$APP_PATH/Contents"
 MACOS_PATH="$CONTENTS_PATH/MacOS"
 RESOURCES_PATH="$CONTENTS_PATH/Resources"
@@ -39,15 +39,15 @@ if [[ "$EXPECTED_HARNESS_VERSION" != "$HARNESS_VERSION" ]]; then
   print -u2 "release version $EXPECTED_HARNESS_VERSION does not match the bundled DeepSeek Harness version $HARNESS_VERSION"
   exit 2
 fi
-DESKTOP_CLIENT_BRAND_NAME="DSH Desktop"
-DESKTOP_CLIENT_TITLE="$DESKTOP_CLIENT_BRAND_NAME — DeepSeek Harness $HARNESS_VERSION"
+DESKTOP_CLIENT_BRAND_NAME="DeepSeek Harness"
+DESKTOP_CLIENT_TITLE="$DESKTOP_CLIENT_BRAND_NAME $HARNESS_VERSION"
 DEFAULT_APP_VERSION="${HARNESS_VERSION%%-*}"
 DEFAULT_APP_VERSION="${DEFAULT_APP_VERSION%%+*}"
 APP_VERSION="${DSH_APP_VERSION:-$DEFAULT_APP_VERSION}"
 APP_BUILD_NUMBER="${DSH_APP_BUILD_NUMBER:-1}"
 SOURCE_REVISION="${DSH_SOURCE_REVISION:-$(git -C "$REPO_ROOT" rev-parse HEAD)}"
 SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:--}"
-DMG_BASENAME="DSH-Desktop-$HARNESS_VERSION-macOS-arm64"
+DMG_BASENAME="DeepSeek-Harness-$HARNESS_VERSION-macOS-arm64"
 DMG_PATH="$ARTIFACT_ROOT/$DMG_BASENAME.dmg"
 
 if [[ "$APP_VERSION" != <->.<->.<-> ]]; then
@@ -96,11 +96,11 @@ mkdir -p "$MODULE_CACHE"
 export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE"
 export SWIFT_MODULE_CACHE_PATH="$MODULE_CACHE"
 xcrun swiftc -swift-version 5 -O -framework AppKit -framework WebKit \
-  "$SCRIPT_DIR/Sources/main.swift" -o "$MACOS_PATH/DSHDesktop"
+  "$SCRIPT_DIR/Sources/main.swift" -o "$MACOS_PATH/DeepSeekHarness"
 
 xcrun swiftc -swift-version 5 -O -framework AppKit \
   "$SCRIPT_DIR/Sources/IconRasterizer.swift" -o "$ARTIFACT_ROOT/IconRasterizer"
-"$ARTIFACT_ROOT/IconRasterizer" "$ARTIFACT_ROOT/AppIcon-1024.png"
+"$ARTIFACT_ROOT/IconRasterizer" "$REPO_ROOT/apps/web/public/favicon.svg" "$ARTIFACT_ROOT/AppIcon-1024.png"
 ICONSET="$ARTIFACT_ROOT/AppIcon.iconset"
 mkdir -p "$ICONSET"
 for size in 16 32 128 256 512; do
@@ -135,11 +135,11 @@ rm -f "$ARTIFACT_ROOT/IconRasterizer" "$ARTIFACT_ROOT/AppIcon-1024.png"
 if [[ "$BUILD_MODE" == "dmg" ]]; then
   STAGING_PATH="$ARTIFACT_ROOT/dmg-root"
   mkdir -p "$STAGING_PATH"
-  /usr/bin/ditto "$APP_PATH" "$STAGING_PATH/DSH Desktop.app"
+  /usr/bin/ditto "$APP_PATH" "$STAGING_PATH/DeepSeek Harness.app"
   cp "$SCRIPT_DIR/ATTRIBUTION.txt" "$STAGING_PATH/ATTRIBUTION.txt"
   cp "$REPO_ROOT/LICENSE" "$STAGING_PATH/DEEPSEEK_HARNESS_LICENSE"
   ln -s /Applications "$STAGING_PATH/Applications"
-  /usr/bin/hdiutil create -volname "DSH Desktop" -srcfolder "$STAGING_PATH" -ov -format UDZO "$DMG_PATH"
+  /usr/bin/hdiutil create -volname "DeepSeek Harness" -srcfolder "$STAGING_PATH" -ov -format UDZO "$DMG_PATH"
   rm -rf "$STAGING_PATH"
   if [[ "$SIGNING_IDENTITY" != "-" ]]; then
     sign_one "$DMG_PATH"

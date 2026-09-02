@@ -1,21 +1,21 @@
-DSH Desktop attribution
+DeepSeek Harness macOS distribution attribution
 
-DSH Desktop is an independently maintained community macOS application built on DeepSeek Harness. It is not sponsored, endorsed, or approved by DeepSeek.
+This DeepSeek Harness macOS distribution is independently maintained by the community. It is not sponsored, endorsed, or approved by DeepSeek.
 
 DeepSeek Harness source:
 https://github.com/deepseek-ai/deepseek-harness
 
 DeepSeek Harness is Copyright (c) 2026 DeepSeek and is distributed under the MIT License. The complete license is included as DEEPSEEK_HARNESS_LICENSE. Licenses for bundled third-party components are listed in THIRD_PARTY_NOTICES.md and NODE_LICENSE inside the application.
 
-The DSH Desktop name, desktop shell modifications, and original terminal-style app icon identify this community distribution. DeepSeek and DeepSeek Harness names and related marks belong to their respective owners.
+The application reuses the DeepSeek Harness name and repository-owned fish icon to identify the embedded project. The macOS shell modifications and release artifacts belong to this community distribution. DeepSeek, DeepSeek Harness, and related marks belong to their respective owners.
 
-DSH Desktop 归属说明
+DeepSeek Harness macOS 发行版归属说明
 
-DSH Desktop 是基于 DeepSeek Harness 的独立社区 macOS 应用，由社区维护，未获得 DeepSeek 的赞助、背书或审批。
+此 DeepSeek Harness macOS 发行版由社区独立维护，未获得 DeepSeek 的赞助、背书或审批。
 
 DeepSeek Harness 源代码：
 https://github.com/deepseek-ai/deepseek-harness
 
 DeepSeek Harness 的版权归 DeepSeek 所有（Copyright (c) 2026 DeepSeek），并依 MIT License 分发。完整许可证收录于 DEEPSEEK_HARNESS_LICENSE，内置第三方组件的许可证见 App 内的 THIRD_PARTY_NOTICES.md 和 NODE_LICENSE。
 
-DSH Desktop 名称、桌面外壳修改及原创终端风格 App 图标用于标识这一社区发行版。DeepSeek、DeepSeek Harness 及相关标识归各自权利人所有。
+应用复用 DeepSeek Harness 名称及仓库内置的鱼形图标，以标识其内置项目。macOS 外壳修改与发行产物属于这一社区发行版。DeepSeek、DeepSeek Harness 及相关标识归各自权利人所有。

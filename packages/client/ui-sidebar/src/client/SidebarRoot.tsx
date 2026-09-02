@@ -122,7 +122,11 @@ export function SidebarRoot({
   }, [pointerInside])
 
   const buildVersion = localBuildVersion()
-  const fallbackBrandName = process.env.DSH_CLIENT_BRAND_NAME ?? t('brand.localBuild')
+  const explicitBrandName = process.env.DSH_CLIENT_BRAND_NAME
+  const fallbackBrandName = explicitBrandName ?? t('brand.localBuild')
+  const brandVersionTooltip = explicitBrandName !== undefined && buildVersion !== undefined
+    ? t('brand.versionTooltip', { version: buildVersion })
+    : undefined
 
   return (
     <div
@@ -146,6 +150,7 @@ export function SidebarRoot({
             type="button"
             className={clsx(css.brand, css.wide)}
             aria-label={t('session.new.label')}
+            title={brandVersionTooltip}
             onClick={() => { startSession() }}
           >
             <span className={css.brandIdentity} aria-hidden="true">
@@ -154,7 +159,7 @@ export function SidebarRoot({
               </span>
               <span className={css.brandName}>
                 {renderSlot('sidebar.brand.name', {}, {
-                  fallback: buildVersion === undefined
+                  fallback: buildVersion === undefined || explicitBrandName !== undefined
                     ? <span className={css.fallbackBrandName}>{fallbackBrandName}</span>
                     : (
                       <span className={css.localBuildBrand}>

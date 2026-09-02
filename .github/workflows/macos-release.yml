@@ -90,7 +90,7 @@ jobs:
             print -u2 "Harness version does not provide a numeric macOS bundle version: $harness_version"
             exit 2
           fi
-          artifact_basename="DSH-Desktop-$harness_version-macOS-arm64"
+          artifact_basename="DeepSeek-Harness-$harness_version-macOS-arm64"
           print "harness_version=$harness_version" >> "$GITHUB_OUTPUT"
           print "app_version=$app_version" >> "$GITHUB_OUTPUT"
           print "artifact_basename=$artifact_basename" >> "$GITHUB_OUTPUT"
@@ -157,7 +157,7 @@ jobs:
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'app-v')
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
-          name: DSH Desktop — DeepSeek Harness ${{ steps.version.outputs.harness_version }} for macOS
+          name: DeepSeek Harness ${{ steps.version.outputs.harness_version }} for macOS
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
@@ -168,7 +168,7 @@ jobs:
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'test-v')
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
-          name: DSH Desktop — DeepSeek Harness ${{ steps.version.outputs.harness_version }} unsigned macOS test build
+          name: DeepSeek Harness ${{ steps.version.outputs.harness_version }} unsigned macOS test build
           prerelease: true
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -178,7 +178,7 @@ jobs:
             >
             > 此 Apple Silicon 测试包仅使用 ad hoc 签名，未经 Apple 公证。macOS 可能阻止常规安装；它只用于可信测试，不适合公开分发。
 
-            DSH Desktop is an independent community application built on DeepSeek Harness and is not sponsored, endorsed, or approved by DeepSeek.
+            This DeepSeek Harness macOS build is independently maintained by the community and is not sponsored, endorsed, or approved by DeepSeek.
 
             Verify the download against the attached `.sha256` file before opening it.
           files: |

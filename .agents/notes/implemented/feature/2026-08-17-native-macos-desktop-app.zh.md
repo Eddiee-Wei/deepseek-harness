@@ -12,7 +12,7 @@ DeepSeek Harness 已有适合桌面编程 agent 的浏览器表层、会话与�
 
 `apps/macos` 是现有 `dsh web` 组合之上的私有部署根与 Swift AppKit／WebKit 原生外壳。它被明确排除在 npm release member 策略之外，因为其 manifest 选择的是复制进签名 App 的依赖闭包，而不是定义可供消费的 JavaScript 包。部署根依赖官方 Python SDK 运行时载体；后者继续维护完整 Harness 运行时闭包，桌面端只补充自己的特有要求。扁平的生产部署让打包后的 ESM 插件共享一份 peer 模块图，无需在桌面层重复上游包清单。应用内置 arm64 Node.js，并使用原生 Node.js 启动已发布的 `@deepseek-ai/dsh` CLI。外壳只解析现有 `dsh web:` 就绪行，不导入 agent 内部实现，不修改 `agent-loop`，不发明会话格式，也不增加桌面专用工具协议。
 
-外壳会在文档首次绘制前注入 `html[data-dsh-desktop='macos']`。客户端包只通过该标记为原生标题栏留白并进行少量桌面几何调整。对应的原生拖拽视图会把原始鼠标按下事件交给 `NSWindow.performDrag(with:)`；系统窗口移动因此只发生在标题栏留白区域，不依赖 WebKit 命中测试，也不会让整个窗口背景都可拖动。应用使用独立的 DSH Desktop 产品身份与原创图标，同时把 DeepSeek Harness 标识为上游运行时；窗口组合遵循 Codex 桌面布局：原生窗口装饰、常驻导航侧栏、对话画布、输入框和可选详情栏。
+外壳会在文档首次绘制前注入 `html[data-dsh-desktop='macos']`。客户端包只通过该标记为原生标题栏留白并进行少量桌面几何调整。对应的原生拖拽视图会把原始鼠标按下事件交给 `NSWindow.performDrag(with:)`；系统窗口移动因此只发生在标题栏留白区域，不依赖 WebKit 命中测试，也不会让整个窗口背景都可拖动。应用使用 DeepSeek Harness 名称与仓库自带的 Web 鱼形标记，同时按[上游可见的 macOS 品牌决策](2026-09-02-upstream-visible-macos-branding-and-resources.zh.md)保留中性 bundle 标识符和独立社区归属说明；窗口组合遵循 Codex 桌面布局：原生窗口装饰、常驻导航侧栏、对话画布、输入框和可选详情栏。
 
 Session 区头的 Workspace 开发者控件仍属于共用 Web 客户端，而不是原生外壳。它可在四个固定 macOS 应用之一打开已注册 Workspace，并通过由 `dsh-api-workspace-controller` 持有、仅限回环地址的 Host RPC 方法展示 Git 仓库状态。创建分支会拒绝脏的当前 worktree；创建关联 worktree 会把目标目录限定在 Harness 持有的家目录下，只注册已成功创建的路径，并在其中启动普通 Session。Git 与 `open` 均通过固定可执行文件及参数数组调用，不经过 shell，也不接收调用方提供的命令字符串。这样，原生桌面操作仍位于轻量展示与 Host 集成层，不改变 agent loop、工具、权限、会话或插件语义。
 
@@ -20,7 +20,7 @@ Session 区头的 Workspace 开发者控件仍属于共用 Web 客户端，而�
 
 WebKit 使用非持久数据存储，导航只允许当前受管的回环 origin。用户点击的外部链接交给系统浏览器。App 退出时负责子进程生命周期，先发送 SIGTERM，再用有时间上限的 SIGKILL 兜底。Developer ID 签名启用 hardened runtime；内置 Node.js 只获得其运行时与原生 addon 所需的动态代码和库校验例外。应用不启用 App Sandbox，因为 Harness 支持的工作包含经用户授权的文件系统、终端、子进程和语言服务器访问；这些权限仍由现有 Harness 策略负责。
 
-`apps/macos/build.sh` 会读取内置 `@deepseek-ai/dsh` CLI manifest 中的精确版本号，并把 Web 文档标题构建为 `DSH Desktop — DeepSeek Harness <版本号>`，保留预发布后缀。脚本还会分别提供产品名称与版本号，让通用的侧边栏品牌 fallback 渲染紧凑的名称加版本身份，而不是 `DSH Local Build` 加 commit hash。这样，已安装客户端的可见身份会随已同步的 Harness revision 更新，同时不需要在运行时发起网络请求。随后，脚本会以扁平模块图部署维护中的运行时闭包，运行构建产物自检以验证访问栅栏与 token 交换，编译 Swift 外壳，从内到外为嵌套 Mach-O 文件签名，验证 App，创建并验证压缩 DMG，最后输出 SHA-256 文件。`.github/workflows/macos-release.yml` 使用固定 commit 的 action 与 Apple Silicon runner。`app-v*` tag 必须具备 Developer ID 与公证凭据，并把验证后的 DMG 和校验和发布到 GitHub Release。`test-v*` tag 强制使用 ad hoc 签名、跳过公证，并发布带有明确警告、只用于可信测试的 GitHub Pre-release。手动运行可以生成 artifact，但不会发布 Release。
+`apps/macos/build.sh` 会读取内置 `@deepseek-ai/dsh` CLI manifest 中的精确版本号，并把 Web 文档标题构建为 `DeepSeek Harness <版本号>`，保留预发布后缀。脚本还会分别提供产品名称与版本号，让侧边栏保持简洁的产品名，并在悬停时提供 `version[-commit][-dirty]`。这样，已安装客户端的可见身份会随已同步的 Harness revision 更新，同时不需要在运行时发起网络请求。随后，脚本会以扁平模块图部署维护中的运行时闭包，运行构建产物自检以验证访问栅栏与 token 交换，编译 Swift 外壳，将仓库内的 Web 图标光栅化，从内到外为嵌套 Mach-O 文件签名，验证 App，创建并验证压缩 DMG，最后输出 SHA-256 文件。`.github/workflows/macos-release.yml` 使用固定 commit 的 action 与 Apple Silicon runner。`app-v*` tag 必须具备 Developer ID 与公证凭据，并把验证后的 DMG 和校验和发布到 GitHub Release。`test-v*` tag 强制使用 ad hoc 签名、跳过公证，并发布带有明确警告、只用于可信测试的 GitHub Pre-release。手动运行可以生成 artifact，但不会发布 Release。
 
 ## 考虑过的替代方案
 

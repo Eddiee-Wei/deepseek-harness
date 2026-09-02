@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
+import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import type {
   SidebarFooterActionOwnerProps, SidebarRootComponentProps, SidebarSectionOwnerProps,
   SidebarSettingsOwnerProps,
@@ -10,10 +11,7 @@ import { SidebarRoot } from '../src/client/SidebarRoot.tsx'
 import { en } from '../src/client/locales.ts'
 import { en as commonEn } from '@deepseek-ai/dsh-client-locale/src/locales/en.ts'
 
-// English-dictionary translate stub: the shell renders the same copy the
-// assertions below query by accessible name.
-const t: SidebarRootComponentProps['t'] = key =>
-  (en as Record<string, string>)[key] ?? (commonEn as Record<string, string>)[key] ?? key
+const t: SidebarRootComponentProps['t'] = makeTranslate(en, commonEn)
 
 afterEach(() => {
   cleanup()
@@ -99,7 +97,7 @@ describe('SidebarRoot shell', () => {
   })
 
   it('renders generic brand fallbacks when no package fills the slots', () => {
-    vi.stubEnv('DSH_CLIENT_BRAND_NAME', 'DSH Desktop')
+    vi.stubEnv('DSH_CLIENT_BRAND_NAME', 'DeepSeek Harness')
     vi.stubEnv('DSH_CLIENT_COMMIT_HASH', '0123456')
     vi.stubEnv('DSH_CLIENT_GIT_DIRTY', 'true')
     vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3-rc.4')
@@ -111,8 +109,10 @@ describe('SidebarRoot shell', () => {
         options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
     />)
 
-    expect(screen.getByText('DSH Desktop')).toBeTruthy()
-    expect(screen.getByText('1.2.3-rc.4-0123456-dirty')).toBeTruthy()
+    expect(screen.getByText('DeepSeek Harness')).toBeTruthy()
+    expect(screen.queryByText('1.2.3-rc.4-0123456-dirty')).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'New session' })[0]?.getAttribute('title'))
+      .toBe('DeepSeek Harness 1.2.3-rc.4-0123456-dirty · macOS adaptation')
     expect(container.querySelector('svg')).not.toBeNull()
   })
 
@@ -146,7 +146,7 @@ describe('SidebarRoot shell', () => {
   })
 
   it('renders a product build name without version metadata', () => {
-    vi.stubEnv('DSH_CLIENT_BRAND_NAME', 'DSH Desktop')
+    vi.stubEnv('DSH_CLIENT_BRAND_NAME', 'DeepSeek Harness')
     render(<SidebarRoot
       collapsed={false} width={300}
       useSessions={neverHook} useSessionPendingInteraction={useSessionPendingInteraction} useWorkspaces={neverHook}
@@ -155,7 +155,7 @@ describe('SidebarRoot shell', () => {
         options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
     />)
 
-    expect(screen.getByText('DSH Desktop')).toBeTruthy()
+    expect(screen.getByText('DeepSeek Harness')).toBeTruthy()
   })
 
   it('hands the region its wide flag and clamps expandSidebar to the collapsed state', () => {

@@ -1,7 +1,7 @@
 import AppKit
 import WebKit
 
-private let applicationName = "DSH Desktop"
+private let applicationName = "DeepSeek Harness"
 private let upstreamProjectURL = URL(string: "https://github.com/deepseek-ai/deepseek-harness")!
 private let readinessPrefix = "dsh web: "
 private let titlebarDragHeight: CGFloat = 28
@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private var backendURL: URL?
     private var logHandle: FileHandle?
     private var outputBuffer = Data()
-    private let outputQueue = DispatchQueue(label: "io.github.eddieewei.dshdesktop.backend-output")
+    private let outputQueue = DispatchQueue(label: "io.github.eddieewei.deepseek-harness.backend-output")
     private var startupTimeout: DispatchWorkItem?
     private var isQuitting = false
     private var terminationReplyPending = false
@@ -161,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         window.minSize = NSSize(width: 960, height: 640)
         window.contentView = content
         window.delegate = self
-        window.setFrameAutosaveName("DSHDesktopMainWindow")
+        window.setFrameAutosaveName("DeepSeekHarnessMainWindow")
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -172,7 +172,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About \(applicationName)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let about = NSMenuItem(title: "About \(applicationName)", action: #selector(showAbout), keyEquivalent: "")
+        about.target = self
+        appMenu.addItem(about)
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Hide \(applicationName)", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h").keyEquivalentModifierMask = [.command, .option]
@@ -210,12 +212,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
         let helpItem = NSMenuItem()
         let helpMenu = NSMenu(title: "Help")
-        let upstream = NSMenuItem(title: "DeepSeek Harness Upstream", action: #selector(openUpstreamProject), keyEquivalent: "")
+        let upstream = NSMenuItem(title: "DeepSeek Harness Source", action: #selector(openUpstreamProject), keyEquivalent: "")
         upstream.target = self
         helpMenu.addItem(upstream)
         let attribution = NSMenuItem(title: "Open Source Attribution", action: #selector(openAttribution), keyEquivalent: "")
         attribution.target = self
         helpMenu.addItem(attribution)
+        helpMenu.addItem(.separator())
+        let skills = NSMenuItem(title: "Open User Skills Folder", action: #selector(openUserSkills), keyEquivalent: "")
+        skills.target = self
+        helpMenu.addItem(skills)
+        let data = NSMenuItem(title: "Open Local Data Folder", action: #selector(openLocalData), keyEquivalent: "")
+        data.target = self
+        helpMenu.addItem(data)
+        let resources = NSMenuItem(title: "Open Application Resources", action: #selector(openApplicationResources), keyEquivalent: "")
+        resources.target = self
+        helpMenu.addItem(resources)
         helpMenu.addItem(.separator())
         let logs = NSMenuItem(title: "Open Runtime Log", action: #selector(openLog), keyEquivalent: "")
         logs.target = self
@@ -228,11 +240,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
     private func runtimeURL(_ relativePath: String) throws -> URL {
         guard let resources = Bundle.main.resourceURL else {
-            throw NSError(domain: "DSHDesktopApp", code: 1, userInfo: [NSLocalizedDescriptionKey: "Application resources are missing."])
+            throw NSError(domain: "DeepSeekHarnessApp", code: 1, userInfo: [NSLocalizedDescriptionKey: "Application resources are missing."])
         }
         let url = resources.appendingPathComponent(relativePath)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw NSError(domain: "DSHDesktopApp", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bundled runtime file is missing: \(relativePath)"])
+            throw NSError(domain: "DeepSeekHarnessApp", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bundled runtime file is missing: \(relativePath)"])
         }
         return url
     }
@@ -335,7 +347,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
     private func prepareLogFile() throws -> URL {
         let directory = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/DSH Desktop", isDirectory: true)
+            .appendingPathComponent("Library/Logs/DeepSeek Harness", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent("runtime.log")
         if !FileManager.default.fileExists(atPath: url.path) {
@@ -346,10 +358,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
     private func showFailure(_ message: String) {
         startupTimeout?.cancel()
-        statusLabel.stringValue = "DSH Desktop could not start"
+        statusLabel.stringValue = "DeepSeek Harness could not start"
         let alert = NSAlert()
         alert.alertStyle = .critical
-        alert.messageText = "DSH Desktop could not start"
+        alert.messageText = "DeepSeek Harness could not start"
         alert.informativeText = message
         alert.addButton(withTitle: "Open Log")
         alert.addButton(withTitle: "Quit")
@@ -363,9 +375,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     @objc private func resetZoom() { webView.pageZoom = 1 }
     @objc private func zoomIn() { webView.pageZoom = min(webView.pageZoom + 0.1, 2) }
     @objc private func zoomOut() { webView.pageZoom = max(webView.pageZoom - 0.1, 0.6) }
+    @objc private func showAbout() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "DSHHarnessVersion") as? String ?? "Unknown"
+        let revision = Bundle.main.object(forInfoDictionaryKey: "DSHSourceRevision") as? String ?? "Unknown"
+        let shortRevision = revision.count >= 7 ? String(revision.prefix(7)) : revision
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationName: applicationName,
+            .applicationVersion: "Harness \(version) · macOS adaptation \(shortRevision)",
+            .version: "Community build",
+            .credits: NSAttributedString(string: "Independent community distribution. Source and license details are available from the Help menu."),
+        ])
+    }
+
+    private func openOrCreateDirectory(_ url: URL) {
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(url)
+    }
+
+    @objc private func openUserSkills() {
+        openOrCreateDirectory(FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".dsh/skills", isDirectory: true))
+    }
+
+    @objc private func openLocalData() {
+        openOrCreateDirectory(FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".dsh", isDirectory: true))
+    }
+
+    @objc private func openApplicationResources() {
+        guard let resources = Bundle.main.resourceURL else { return }
+        NSWorkspace.shared.open(resources)
+    }
+
     @objc private func openLog() {
         let url = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/DSH Desktop/runtime.log")
+            .appendingPathComponent("Library/Logs/DeepSeek Harness/runtime.log")
         if FileManager.default.fileExists(atPath: url.path) { NSWorkspace.shared.open(url) }
     }
 

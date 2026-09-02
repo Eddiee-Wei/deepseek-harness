@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-02-upstream-visible-macos-branding-and-resources.md
+2026-09-02-upstream-visible-macos-branding-and-resources.md: c8de929bba73b0b9c5a5046b8e37a95cdb40227b
+2026-09-02-upstream-visible-macos-branding-and-resources.zh.md: 484a54609c4a021fe549a6a208f4fe7c189b4019

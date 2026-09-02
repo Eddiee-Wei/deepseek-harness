@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-macos-app",
-  "description": "Private deployment root for DSH Desktop, an independent macOS client built on DeepSeek Harness",
+  "description": "Private deployment root for the independent community DeepSeek Harness macOS distribution",
   "version": "0.1.0-rc.5",
   "private": true,
   "type": "module",

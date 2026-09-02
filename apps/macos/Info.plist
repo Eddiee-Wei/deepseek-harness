@@ -5,19 +5,19 @@
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>DSH Desktop</string>
+  <string>DeepSeek Harness</string>
   <key>CFBundleExecutable</key>
-  <string>DSHDesktop</string>
+  <string>DeepSeekHarness</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
-  <string>io.github.eddieewei.dshdesktop</string>
+  <string>io.github.eddieewei.deepseek-harness</string>
   <key>CFBundleGetInfoString</key>
-  <string>Independent community macOS client built on DeepSeek Harness</string>
+  <string>Independent community macOS distribution of DeepSeek Harness</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>DSH Desktop</string>
+  <string>DeepSeek Harness</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -42,7 +42,7 @@
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSHumanReadableCopyright</key>
-  <string>DeepSeek Harness © 2026 DeepSeek; desktop modifications © 2026 DSH Desktop contributors</string>
+  <string>DeepSeek Harness © 2026 DeepSeek; community macOS adaptation © 2026 contributors</string>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
 </dict>

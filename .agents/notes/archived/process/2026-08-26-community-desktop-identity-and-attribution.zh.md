@@ -1,6 +1,7 @@
 # Agent Note: 社区桌面身份与归属说明
 
 Status: implemented
+Archived: 2026-09-02
 
 [English](2026-08-26-community-desktop-identity-and-attribution.md) | 中文
 
