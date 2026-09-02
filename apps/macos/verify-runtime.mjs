@@ -16,12 +16,10 @@ const root = resolve(runtimeRoot)
 const node = resolve(root, '../node/bin/node')
 const entry = resolve(root, 'node_modules/@deepseek-ai/dsh/lib/bin.js')
 const scratch = await mkdtemp(join(tmpdir(), 'dsh-macos-runtime-'))
-const accessToken = 'packaging-smoke-token-0123456789abcdef'
 const environment = {
   ...process.env,
   DSH_HOME: join(scratch, 'home'),
   DSH_AGENTS_HOME: join(scratch, 'agents'),
-  DSH_WEB_ACCESS_TOKEN: accessToken,
   NO_COLOR: '1',
 }
 delete environment.NODE_OPTIONS
@@ -37,7 +35,7 @@ let settled = false
 const readiness = new Promise((resolveReady, rejectReady) => {
   const observe = (chunk) => {
     output += String(chunk)
-    const match = output.match(/dsh web: (http:\/\/127\.0\.0\.1:\d+)/)
+    const match = output.match(/dsh web: (http:\/\/127\.0\.0\.1:\d+\/\?token=[A-Za-z0-9_-]{32,})/)
     if (match?.[1] !== undefined) resolveReady(match[1])
   }
   child.stdout.on('data', observe)
@@ -57,7 +55,7 @@ try {
   const unauthorized = await fetch(url)
   if (unauthorized.status !== 401) throw new Error(`unauthenticated request returned ${String(unauthorized.status)}, expected 401`)
 
-  const bootstrap = await fetch(`${url}/?token=${accessToken}`, { redirect: 'manual' })
+  const bootstrap = await fetch(url, { redirect: 'manual' })
   const cookie = bootstrap.headers.get('set-cookie')?.split(';', 1)[0]
   if (bootstrap.status !== 303 || cookie === undefined) {
     throw new Error(`bootstrap returned ${String(bootstrap.status)} without an access cookie`)

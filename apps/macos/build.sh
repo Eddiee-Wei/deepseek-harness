@@ -72,7 +72,7 @@ if ! grep -Fq "<title>$DESKTOP_CLIENT_TITLE</title>" "$REPO_ROOT/apps/web/dist/i
   print -u2 "the packaged Web client title does not match the Harness version: $DESKTOP_CLIENT_TITLE"
   exit 2
 fi
-pnpm --ignore-scripts --config.inject-workspace-packages=true \
+pnpm --ignore-scripts --config.inject-workspace-packages=true --config.node-linker=hoisted \
   --filter @deepseek-ai/dsh-macos-app deploy --prod "$RUNTIME_PATH/app"
 while IFS= read -r helper; do
   chmod 755 "$helper"
@@ -95,7 +95,7 @@ MODULE_CACHE="$ARTIFACT_ROOT/ModuleCache"
 mkdir -p "$MODULE_CACHE"
 export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE"
 export SWIFT_MODULE_CACHE_PATH="$MODULE_CACHE"
-xcrun swiftc -swift-version 5 -O -framework AppKit -framework Security -framework WebKit \
+xcrun swiftc -swift-version 5 -O -framework AppKit -framework WebKit \
   "$SCRIPT_DIR/Sources/main.swift" -o "$MACOS_PATH/DSHDesktop"
 
 xcrun swiftc -swift-version 5 -O -framework AppKit \

@@ -1,5 +1,4 @@
 import AppKit
-import Security
 import WebKit
 
 private let applicationName = "DSH Desktop"
@@ -18,17 +17,6 @@ private final class TitlebarDragView: NSView {
     }
 }
 
-private func randomAccessToken() throws -> String {
-    var bytes = [UInt8](repeating: 0, count: 32)
-    guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else {
-        throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecInternalComponent))
-    }
-    return Data(bytes).base64EncodedString()
-        .replacingOccurrences(of: "+", with: "-")
-        .replacingOccurrences(of: "/", with: "_")
-        .replacingOccurrences(of: "=", with: "")
-}
-
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
     private var window: NSWindow!
     private var webView: WKWebView!
@@ -36,7 +24,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private var statusLabel: NSTextField!
     private var backendProcess: Process?
     private var backendURL: URL?
-    private var accessToken = ""
     private var logHandle: FileHandle?
     private var outputBuffer = Data()
     private let outputQueue = DispatchQueue(label: "io.github.eddieewei.dshdesktop.backend-output")
@@ -49,7 +36,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         configureMenu()
         configureWindow()
         do {
-            accessToken = try randomAccessToken()
             try startBackend()
         } catch {
             showFailure("The local DeepSeek Harness service could not start: \(error.localizedDescription)")
@@ -270,7 +256,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         process.arguments = [entry.path, "web", "--host", "127.0.0.1", "--port", "0", "--no-open"]
         process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
         var environment = ProcessInfo.processInfo.environment
-        environment["DSH_WEB_ACCESS_TOKEN"] = accessToken
         environment["NO_COLOR"] = "1"
         environment.removeValue(forKey: "NODE_OPTIONS")
         environment.removeValue(forKey: "NODE_PATH")
@@ -301,12 +286,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private func consumeBackendOutput(_ data: Data) {
         outputQueue.async { [weak self] in
             guard let self else { return }
-            try? self.logHandle?.write(contentsOf: data)
             self.outputBuffer.append(data)
             while let newline = self.outputBuffer.firstIndex(of: 0x0A) {
                 let lineData = self.outputBuffer.prefix(upTo: newline)
                 self.outputBuffer.removeSubrange(...newline)
                 guard let line = String(data: lineData, encoding: .utf8) else { continue }
+                let redacted = line.replacingOccurrences(
+                    of: "([?&]token=)[^\\s)]+",
+                    with: "$1<redacted>",
+                    options: .regularExpression
+                )
+                try? self.logHandle?.write(contentsOf: Data((redacted + "\n").utf8))
                 self.observeBackendLine(line.trimmingCharacters(in: .whitespacesAndNewlines))
             }
         }
@@ -315,9 +305,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private func observeBackendLine(_ line: String) {
         guard line.hasPrefix(readinessPrefix) else { return }
         let remainder = line.dropFirst(readinessPrefix.count)
-        guard let token = remainder.split(separator: " ").first,
-              let url = URL(string: String(token)),
-              url.scheme == "http", url.host == "127.0.0.1" else { return }
+        guard let candidate = remainder.split(separator: " ").first,
+              let components = URLComponents(string: String(candidate)),
+              components.scheme == "http", components.host == "127.0.0.1",
+              components.path == "/", components.fragment == nil,
+              let queryItems = components.queryItems,
+              queryItems.count == 1, queryItems[0].name == "token",
+              let token = queryItems[0].value, token.count >= 32,
+              token.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == "-") }),
+              let url = components.url else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self, self.backendURL == nil else { return }
             self.backendURL = url
@@ -327,11 +323,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     }
 
     private func loadHarness() {
-        guard let backendURL,
-              var components = URLComponents(url: backendURL, resolvingAgainstBaseURL: false) else { return }
-        components.queryItems = [URLQueryItem(name: "token", value: accessToken)]
-        guard let bootstrapURL = components.url else { return }
-        webView.load(URLRequest(url: bootstrapURL, cachePolicy: .reloadIgnoringLocalCacheData))
+        guard let backendURL else { return }
+        webView.load(URLRequest(url: backendURL, cachePolicy: .reloadIgnoringLocalCacheData))
     }
 
     private func finishTermination() {

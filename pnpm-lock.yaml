@@ -466,27 +466,12 @@ importers:
 
   apps/macos:
     dependencies:
-      '@deepseek-ai/cordis-plugin-group':
-        specifier: workspace:^
-        version: link:../../vendor/group
-      '@deepseek-ai/dsh':
-        specifier: workspace:^
-        version: link:../cli
-      '@deepseek-ai/dsh-atomic-write':
-        specifier: workspace:^
-        version: link:../../packages/util/atomic-write
-      '@deepseek-ai/dsh-invariants':
-        specifier: workspace:^
-        version: link:../../packages/runtime-diagnostics/invariants
-      '@deepseek-ai/dsh-session-telemetry':
-        specifier: workspace:^
-        version: link:../../packages/session/session-telemetry
       '@deepseek-ai/dsh-session-title-llm':
         specifier: workspace:^
         version: link:../../packages/session/session-title-llm
-      '@deepseek-ai/dsh-spill':
-        specifier: workspace:^
-        version: link:../../packages/spill/spill
+      dsh-python-runtime-closure:
+        specifier: workspace:*
+        version: link:../../python/sdk-runtime
 
   apps/web:
     devDependencies:

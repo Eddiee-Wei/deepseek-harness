@@ -27,5 +27,19 @@ describe('macOS desktop distribution', () => {
     expect(shell).toContain('"--host", "127.0.0.1", "--port", "0", "--no-open"')
     expect(smoke).toContain("'--host', '127.0.0.1', '--port', '0', '--no-open'")
     expect(shell).toContain('configuration.websiteDataStore = .nonPersistent()')
+    expect(shell).toContain('queryItems.count == 1, queryItems[0].name == "token"')
+    expect(shell).toContain('with: "$1<redacted>"')
+    expect(shell).not.toContain('DSH_WEB_ACCESS_TOKEN')
+  })
+
+  it('reuses the maintained Harness runtime closure with a flat packaged module graph', () => {
+    const build = read('apps/macos/build.sh')
+    const manifest = JSON.parse(read('apps/macos/package.json')) as {
+      dependencies: Record<string, string>
+    }
+
+    expect(manifest.dependencies['dsh-python-runtime-closure']).toBe('workspace:*')
+    expect(manifest.dependencies['@deepseek-ai/dsh-session-title-llm']).toBe('workspace:^')
+    expect(build).toContain('--config.node-linker=hoisted')
   })
 })

@@ -15,7 +15,7 @@ import { newEnglishPage, saveFailureShot } from './support.ts'
 
 const execFileAsync = promisify(execFile)
 const SNAPSHOT_DIR = fileURLToPath(new URL('./snapshots/workspace-developer-controls', import.meta.url))
-const SEED = fileURLToPath(new URL('./snapshots/seeded-history/seed.jsonl', import.meta.url))
+const SEED = fileURLToPath(new URL('../../../snapshots/web/seeded-history/session.jsonl', import.meta.url))
 const EXPECTED = join(SNAPSHOT_DIR, 'settings.expected.md')
 const MODE = webSnapshotMode()
 
@@ -52,7 +52,7 @@ describe('web e2e: macOS Workspace developer controls', () => {
       new MutationObserver(markDesktop).observe(document, { childList: true })
     })
     tripwire = watchConsole(page)
-    await page.goto(scaffold.baseUrl, { waitUntil: 'load' })
+    await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
     await page.waitForSelector('[class*="frame"]', { timeout: 30_000 })
   }, 120_000)
 

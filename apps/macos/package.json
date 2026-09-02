@@ -6,12 +6,7 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/cordis-plugin-group": "workspace:^",
-    "@deepseek-ai/dsh": "workspace:^",
-    "@deepseek-ai/dsh-atomic-write": "workspace:^",
-    "@deepseek-ai/dsh-invariants": "workspace:^",
-    "@deepseek-ai/dsh-session-telemetry": "workspace:^",
     "@deepseek-ai/dsh-session-title-llm": "workspace:^",
-    "@deepseek-ai/dsh-spill": "workspace:^"
+    "dsh-python-runtime-closure": "workspace:*"
   }
 }
