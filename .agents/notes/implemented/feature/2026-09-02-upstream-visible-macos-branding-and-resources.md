@@ -16,6 +16,8 @@ Product-branded sidebar builds keep the name on one line and expose `version[-co
 
 The standard presets remain the only skill integration. They load skills from the current Workspace and the established `.dsh/skills`, `.agents/skills`, `~/.dsh/skills`, and `~/.agents/skills` roots. The desktop shell does not introduce a private catalog or protocol. Its Help menu opens the user skill root, Harness data root, packaged resources, attribution, and runtime log; Settings remains the owner of plugin inventory and Workspace/Git controls.
 
+The repository landing page identifies the current adapted Harness version and supported desktop platforms. A platform is marked available only when its tested release artifact exists; the page links the versioned DMG, checksum, and GitHub Release while keeping signing and notarization limits adjacent to the download.
+
 ## Alternatives considered
 
 **Keep `DSH Desktop` and add a larger subtitle.** Rejected because the installed application, Dock item, and sidebar would still conceal the runtime users intentionally chose.
@@ -26,4 +28,4 @@ The standard presets remain the only skill integration. They load skills from th
 
 ## Consequences
 
-The installed App and release artifacts are immediately identifiable as DeepSeek Harness, while the neutral bundle identifier and packaged notices continue to distinguish this community distribution from an official vendor release. Users can inspect the exact adapted build without permanent badge clutter and can reach skill, data, resource, attribution, and log locations through native menus. Future upstream syncs continue to update one shared agent, plugin, permission, session, and skill implementation rather than a desktop fork.
+The installed App, repository landing page, and release artifacts are immediately identifiable as DeepSeek Harness, while the neutral bundle identifier and packaged notices continue to distinguish this community distribution from an official vendor release. Users can find the current supported download, inspect the exact adapted build without permanent badge clutter, and reach skill, data, resource, attribution, and log locations through native menus. Future upstream syncs continue to update one shared agent, plugin, permission, session, and skill implementation rather than a desktop fork.

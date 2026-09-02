@@ -2,7 +2,29 @@
 
 English | [中文](README.zh.md)
 
-**Community distribution:** This repository is an independently maintained fork of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Its macOS distribution uses the repository-owned DeepSeek Harness name and icon while remaining an unofficial community build; it is not sponsored, endorsed, or approved by DeepSeek. DeepSeek Harness remains Copyright (c) 2026 DeepSeek and is used under the [MIT License](LICENSE).
+This repository packages the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) agent runtime as a native macOS application with a Codex-style desktop interface. It keeps the upstream agent, session, plugin, tool, permission, settings, credential, and skill behavior, while adding a thin macOS shell, workspace navigation, Git controls, local-resource shortcuts, and DMG packaging.
+
+## Download the desktop app
+
+Current adapted Harness version: **0.1.2-alpha.4**
+
+| Platform | Support | Download |
+|---|---|---|
+| macOS 13 or newer, Apple Silicon | Available as a test Pre-release | **[Download DMG](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.4/DeepSeek-Harness-0.1.2-alpha.4-macOS-arm64.dmg)** · [SHA-256](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.4/DeepSeek-Harness-0.1.2-alpha.4-macOS-arm64.dmg.sha256) · [Release notes](https://github.com/Eddiee-Wei/deepseek-harness/releases/tag/test-v0.1.2-alpha.4) |
+| Windows | Coming soon | — |
+| Linux | Coming soon | — |
+
+The current macOS download uses ad hoc signing and has not been Apple-notarized. Verify the attached SHA-256 file before opening it. macOS may require you to Control-click the app, choose **Open**, and confirm the security prompt. Intel Macs are not supported by this build.
+
+The app runs as `DeepSeek Harness.app`; users do not need to keep a browser window open. An authenticated server bound to `127.0.0.1` is an internal private transport between the bundled Harness runtime and the app's WebView, not a public website.
+
+## Upstream and attribution
+
+This repository is an independently maintained fork and unofficial community distribution of DeepSeek Harness. It synchronizes the upstream Harness agent core and maintains the desktop UI and packaging as an additive layer so upstream updates require minimal adaptation. It is not sponsored, endorsed, or approved by DeepSeek.
+
+DeepSeek Harness remains Copyright (c) 2026 DeepSeek and is used under the [MIT License](LICENSE). DeepSeek, DeepSeek Harness, and related marks belong to their respective owners. Packaged attribution and third-party license notices are included in the app and DMG.
+
+## About DeepSeek Harness
 
 DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
 
@@ -33,7 +55,7 @@ The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it
 To run from a repository checkout:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
+git clone https://github.com/Eddiee-Wei/deepseek-harness.git
 cd deepseek-harness
 pnpm install
 pnpm run build
