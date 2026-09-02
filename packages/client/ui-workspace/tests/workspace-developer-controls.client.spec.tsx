@@ -2,7 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
-import type { SessionId, WorkspaceId, WorkspaceListState, WorkspaceView } from '@deepseek-ai/dsh-client-runtime/client'
+import type {
+  WorkspaceId, WorkspaceSnapshot, WorkspaceView,
+} from '@deepseek-ai/dsh-api-workspace-controller/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceDeveloperControlsProps } from '../src/client/contract/slots.ts'
 import { WorkspaceDeveloperControls } from '../src/client/WorkspaceDeveloperControls.tsx'
 import { en } from '../src/client/locales.ts'
@@ -23,16 +26,14 @@ const workspace: WorkspaceView = {
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
-const workspaceState: WorkspaceListState = {
+const workspaceState: WorkspaceSnapshot = {
   items: [workspace],
   archivedSessionIds: [],
   state: 'idle',
   phase: 'ready',
   error: null,
-  baselinesReady: true,
-  recentWorkspaceId: workspaceId,
 }
-const selectWorkspace = <T,>(selector: (state: WorkspaceListState) => T): T => selector(workspaceState)
+const selectWorkspace = <T,>(selector: (state: WorkspaceSnapshot) => T): T => selector(workspaceState)
 
 function mount(overrides: Partial<WorkspaceDeveloperControlsProps> = {}) {
   const props = {

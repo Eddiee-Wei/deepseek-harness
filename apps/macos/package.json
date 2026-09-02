@@ -12,7 +12,6 @@
     "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-session-telemetry": "workspace:^",
     "@deepseek-ai/dsh-session-title-llm": "workspace:^",
-    "@deepseek-ai/dsh-spill": "workspace:^",
-    "dsh-jsonrpc-agent-pkg": "workspace:*"
+    "@deepseek-ai/dsh-spill": "workspace:^"
   }
 }

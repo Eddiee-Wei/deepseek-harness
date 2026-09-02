@@ -1,20 +1,19 @@
 /**
- * @deepseek-ai/dsh-host-webserver — Web route-registration plugin: a node:http
- * server plus the `webServer` service (HTTP and upgrade route registries, the
- * structured index injection table with raw transform taps behind it, and the
- * single fallback seat for everything no route claims). Knows no harness concepts and serves no files; the composing
- * application's frontend plugin owns dist serving through the fallback hook.
- * Web shape only — Electron loads dist over file:// and carries fetch over an
- * IPC bridge. This package never prints: the URL line belongs to the shell.
+ * @deepseek-ai/dsh-host-webserver — node:http route registration with optional
+ * gzip, index injection, and one fallback seat. It knows no harness concepts
+ * and serves no files; the composing application owns dist serving. Electron
+ * uses file:// plus IPC instead, and this package never prints the URL.
+ * Route handlers retain direct response ownership.
  */
 
-import { timingSafeEqual } from 'node:crypto'
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse, Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { Duplex } from 'node:stream'
 import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+import compressionMiddleware from 'compression'
+import Negotiator from 'negotiator'
 import { renderIndexInjections, type IndexInjection } from './injections.ts'
 
 export { renderIndexInjections } from './injections.ts'
@@ -56,14 +55,63 @@ export interface WebUpgradeRoute {
   handler: (req: IncomingMessage, socket: Duplex, head: Buffer) => void | Promise<void>
 }
 
-/** Gateway config: the listen address. */
+/** Web server listen and response-compression config. */
 export interface Config {
   /** Listen host; the two supported values are loopback and all-interfaces. */
   host: '127.0.0.1' | '0.0.0.0'
   /** Listen port; zero requests an OS-assigned port. */
   port: number
-  /** Optional bootstrap token required by every HTTP and upgrade request. */
-  accessToken?: string
+  /** Response compression for socket-backed HTTP requests. @default 'none' */
+  compression?: 'none' | 'gzip'
+  /** Gzip DEFLATE level from 0 through 9. @default 1 */
+  compressionLevel?: number
+  /** Minimum known response length eligible for gzip; unknown-length streams are eligible. @default 1024 */
+  compressionThresholdBytes?: number
+}
+
+const DEFAULT_COMPRESSION = 'none' as const
+const DEFAULT_COMPRESSION_LEVEL = 1
+const DEFAULT_COMPRESSION_THRESHOLD_BYTES = 1024
+
+interface ResolvedConfig extends Config {
+  compression: 'none' | 'gzip'
+  compressionLevel: number
+  compressionThresholdBytes: number
+}
+
+type NodeMiddleware = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void,
+) => void
+
+function createGzipMiddleware(config: ResolvedConfig): NodeMiddleware {
+  // `compression` is typed for Express, but its runtime uses only the
+  // node:http request and response members supplied here.
+  const middleware = compressionMiddleware({
+    level: config.compressionLevel,
+    threshold: config.compressionThresholdBytes,
+    filter(request, response) {
+      if (response.getHeader('content-range') !== undefined) return false
+      const contentType = response.getHeader('content-type')
+      if (typeof contentType === 'string' && contentType.toLowerCase().startsWith('text/event-stream')) return false
+      return compressionMiddleware.filter(request, response)
+    },
+  }) as unknown as NodeMiddleware
+
+  return (req, res, next) => {
+    // The Web Worker tunnel has no socket and transfers identity bytes.
+    if ((res as { socket?: unknown }).socket === undefined) {
+      next()
+      return
+    }
+    const encoding = new Negotiator(req).encoding(['gzip', 'identity'])
+    const gzipRequest = Object.create(req) as IncomingMessage
+    Object.defineProperty(gzipRequest, 'headers', {
+      value: { ...req.headers, 'accept-encoding': encoding === 'gzip' ? 'gzip' : 'identity' },
+    })
+    middleware(gzipRequest, res, next)
+  }
 }
 
 /**
@@ -77,7 +125,9 @@ export class WebServer extends Service {
   static Config: z<Config> = z.object({
     host: z.union([z.const('127.0.0.1'), z.const('0.0.0.0')]).required(),
     port: z.natural().max(65535).required(),
-    accessToken: z.string().min(32),
+    compression: z.union([z.const('none'), z.const('gzip')]).default(DEFAULT_COMPRESSION),
+    compressionLevel: z.number().step(1).min(0).max(9).default(DEFAULT_COMPRESSION_LEVEL),
+    compressionThresholdBytes: z.natural().default(DEFAULT_COMPRESSION_THRESHOLD_BYTES),
   })
 
   private readonly exact = new Map<string, WebRoute>()
@@ -88,9 +138,12 @@ export class WebServer extends Service {
   private fallback: WebRoute['handler'] | undefined
   private server!: Server
   private listenedPort!: number
+  private readonly gzip: NodeMiddleware | undefined
 
   constructor(ctx: Context, private config: Config) {
     super(ctx, 'webServer')
+    const resolved = config as ResolvedConfig
+    this.gzip = resolved.compression === 'gzip' ? createGzipMiddleware(resolved) : undefined
   }
 
   /** The listening port (the OS-assigned value when config.port is 0). */
@@ -168,9 +221,7 @@ export class WebServer extends Service {
     const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
       /* v8 ignore next -- `?? '/'` arm: node:http always sets url on server
       requests; the field is only optional on the client-side IncomingMessage type */
-      const requestUrl = new URL(req.url ?? '/', 'http://x')
-      if (!this.authorizeHttp(req, res, requestUrl)) return
-      const rawPath = requestUrl.pathname
+      const rawPath = new URL(req.url ?? '/', 'http://x').pathname
       const route = this.match(rawPath)
       if (route !== undefined) {
         await route.handler(req, res)
@@ -189,15 +240,19 @@ export class WebServer extends Service {
     // client dropping mid-body). Per-request failures log and answer 400 —
     // never a process exit.
     this.server = createServer((req, res) => {
-      handle(req, res).catch((err: unknown) => {
-        this.ctx.logger.warn(err instanceof Error ? err : new Error(String(err)))
-        if (res.headersSent) {
-          res.destroy()
-          return
-        }
-        res.writeHead(400)
-        res.end()
-      })
+      const next = (): void => {
+        void handle(req, res).catch((err: unknown) => {
+          this.ctx.logger.warn(err instanceof Error ? err : new Error(String(err)))
+          if (res.headersSent) {
+            res.destroy()
+            return
+          }
+          res.writeHead(400)
+          res.end()
+        })
+      }
+      if (this.gzip === undefined) next()
+      else this.gzip(req, res, next)
     })
     this.server.on('upgrade', (req, socket, head) => {
       const onError = (error: Error): void => {
@@ -211,10 +266,6 @@ export class WebServer extends Service {
       })
       let route: WebUpgradeRoute | undefined
       try {
-        if (!this.authorized(req)) {
-          socket.destroy()
-          return
-        }
         /* v8 ignore next -- node:http always sets url on server requests. */
         route = this.upgrades.get(new URL(req.url ?? '/', 'http://x').pathname)
       } catch (error) {
@@ -261,55 +312,6 @@ export class WebServer extends Service {
       }))
       await Promise.all([serverClosed, ...upgradedClosed])
     }, 'webServer.listen')
-  }
-
-  /** Constant-time token comparison for cookie and bootstrap values. */
-  private tokenMatches(candidate: string | undefined): boolean {
-    const expected = this.config.accessToken
-    if (expected === undefined || candidate === undefined) return expected === candidate
-    const expectedBytes = Buffer.from(expected)
-    const candidateBytes = Buffer.from(candidate)
-    return expectedBytes.length === candidateBytes.length && timingSafeEqual(expectedBytes, candidateBytes)
-  }
-
-  /** Read the host-only access cookie without decoding attacker-controlled bytes. */
-  private cookieToken(req: IncomingMessage): string | undefined {
-    const header = req.headers.cookie
-    if (header === undefined) return undefined
-    for (const field of header.split(';')) {
-      const [name, ...value] = field.trim().split('=')
-      if (name === 'dsh_access') return value.join('=')
-    }
-    return undefined
-  }
-
-  /** Whether an ordinary or upgraded request carries the configured access cookie. */
-  private authorized(req: IncomingMessage): boolean {
-    return this.config.accessToken === undefined || this.tokenMatches(this.cookieToken(req))
-  }
-
-  /**
-   * Admit an HTTP request or consume a one-time bootstrap URL by setting the
-   * HttpOnly cookie and redirecting to the same URL with the token removed.
-   */
-  private authorizeHttp(req: IncomingMessage, res: ServerResponse, url: URL): boolean {
-    if (this.config.accessToken === undefined) return true
-    const bootstrap = url.searchParams.get('token') ?? undefined
-    if (req.method === 'GET' && this.tokenMatches(bootstrap)) {
-      url.searchParams.delete('token')
-      const location = `${url.pathname}${url.search}`
-      res.writeHead(303, {
-        'cache-control': 'no-store',
-        location,
-        'set-cookie': `dsh_access=${bootstrap}; Path=/; HttpOnly; SameSite=Strict`,
-      })
-      res.end()
-      return false
-    }
-    if (this.authorized(req)) return true
-    res.writeHead(401, { 'cache-control': 'no-store' })
-    res.end('Unauthorized')
-    return false
   }
 
   /** Longest-prefix-wins over the prefix table after an exact-table miss. */

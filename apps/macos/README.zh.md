@@ -32,7 +32,7 @@ App 和带版本号的 `DSH-Desktop-<Harness 版本>-macOS-arm64.dmg` 输出到 
 
 每个发行 tag 的后缀都必须与 `apps/cli/package.json` 中的精确版本一致；工作流会在打包前拒绝不匹配的 tag。对于稳定版 Harness，推送 `app-v0.1.1` 这类 tag 后，工作流会构建、Developer ID 签名、公证、装订、验证，并把带版本号的 DMG 与 SHA-256 文件发布到 GitHub Release。此通道拒绝预发布 Harness 版本；缺少任一 Apple 凭据时，工作流也会拒绝发布。
 
-对于 Harness 预发布版本，或没有 Apple 凭据时，可以推送 `test-v0.1.1-rc.2` 这类 tag，发布 GitHub Pre-release；Release 名称与文件名都会携带同一个精确 Harness 版本和独立的 DSH Desktop 身份。即使仓库以后配置了 secrets，这类测试 DMG 也会强制使用 ad hoc 签名且不进行公证。Release 会提示 macOS 可能阻止常规安装、产物只适合可信测试，并要求用户在打开前核对随附的 SHA-256 文件。手动运行工作流会构建 checkout 中的精确 Harness 版本，但不发布 Release；缺少凭据时使用 ad hoc 签名。
+对于 Harness 预发布版本，或没有 Apple 凭据时，可以推送 `test-v0.1.2-alpha.4` 这类 tag，发布 GitHub Pre-release；Release 名称与文件名都会携带同一个精确 Harness 版本和独立的 DSH Desktop 身份。即使仓库以后配置了 secrets，这类测试 DMG 也会强制使用 ad hoc 签名且不进行公证。Release 会提示 macOS 可能阻止常规安装、产物只适合可信测试，并要求用户在打开前核对随附的 SHA-256 文件。手动运行工作流会构建 checkout 中的精确 Harness 版本，但不发布 Release；缺少凭据时使用 ad hoc 签名。
 
 ## 归属说明
 

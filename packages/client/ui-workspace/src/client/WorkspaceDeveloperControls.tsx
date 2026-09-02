@@ -6,11 +6,14 @@ import {
   IconCodeOutline16, IconCordisPluginOutline14, IconFolderOpenOutline16,
   IconSettingsOutline16, Input, Menu, Modal,
 } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { HostPathApplication, WorkspaceRepositoryView } from '@deepseek-ai/dsh-client-runtime/client'
+import type {
+  WorkspacePathApplication,
+  WorkspaceRepositoryView,
+} from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { WorkspaceDeveloperControlsProps } from './contract/slots.ts'
 import css from './WorkspaceDeveloperControls.module.css'
 
-const APPLICATION_BY_MENU_ID: Readonly<Record<string, HostPathApplication | undefined>> = {
+const APPLICATION_BY_MENU_ID: Readonly<Record<string, WorkspacePathApplication | undefined>> = {
   vscode: 'vscode',
   cursor: 'cursor',
   finder: 'finder',

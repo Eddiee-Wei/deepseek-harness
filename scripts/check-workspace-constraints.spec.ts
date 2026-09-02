@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import {
   checkExperimentalDependencyIsolation,
   checkExperimentalManifest,
+  checkWorkspaceManifest,
+  expectedDshPackageFiles,
   type WorkspaceManifest,
 } from './check-workspace-constraints.ts'
 
@@ -71,6 +73,26 @@ describe('experimental workspace constraints', () => {
 
     expect(checkExperimentalDependencyIsolation(manifests)).toEqual([
       '@deepseek-ai/dsh-python-runtime: dependencies.@deepseek-ai/dsh-experimental-prototype must not reference an experimental package',
+    ])
+  })
+})
+
+describe('package payload constraints', () => {
+  it('keeps the macOS packaging root private and outside npm publication policy', () => {
+    expect(checkWorkspaceManifest({
+      dir: 'apps/macos',
+      manifest: { name: '@deepseek-ai/dsh-macos-app', private: true },
+    })).toEqual([])
+  })
+
+  it('includes a declared profile patch without a package-name allowlist', () => {
+    expect(expectedDshPackageFiles({
+      name: '@deepseek-ai/dsh-private-profile',
+      dsh: { bundle: { patch: './cordis.patch.yml' } },
+    })).toEqual([
+      'lib/index.js',
+      'cordis.patch.yml',
+      'lib/types/**/*.d.ts',
     ])
   })
 })
