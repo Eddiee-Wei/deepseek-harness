@@ -271,7 +271,7 @@ describe('startup cleanup sweep', () => {
     const boundary = join(dir, 'boundary.txt')
     writeFileSync(boundary, 'x')
     utimesSync(boundary, cutoffMs / 1000, cutoffMs / 1000)
-    await sweepSpillRoots({ roots: [active(root)], cutoffMs, warn: () => {} })
+    await sweepSpillRoots({ roots: [active(root)], cutoffMs: statSync(boundary).mtimeMs, warn: () => {} })
     expect(existsSync(boundary)).toBe(true)
   })
 

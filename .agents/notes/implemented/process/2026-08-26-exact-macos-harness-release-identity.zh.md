@@ -12,6 +12,8 @@ Status: implemented
 
 `apps/cli/package.json` 中的精确版本是 macOS 发行身份，并与 macOS 要求的纯数字 `CFBundleShortVersionString` 分开。每个 `test-v*` 与 `app-v*` tag 的后缀都必须等于该精确版本，包括预发布后缀；否则 `.github/workflows/macos-release.yml` 会在打包前拒绝运行。稳定版 `app-v*` tag 使用 Developer ID 与公证通道；Harness 预发布版本使用 `test-v*`，其 ad hoc 签名 GitHub Pre-release 继续明确标识为不适合常规分发。
 
+`apps/macos/package.json` 属于 `dsh` 发行家族，并与 CLI 及被打包的 workspace 使用同一个精确版本。发行家族检查和安装布局检查会在 macOS 工作流发布产物前拒绝任何版本漂移。
+
 `apps/macos/build.sh` 会独立比较请求的发行版本与内置 CLI manifest。App 元数据记录精确 Harness 版本与完整 Git 源码 revision。DMG 文件名、workflow artifact、GitHub Release 名称和校验和文件名都包含同一个 Harness 版本。这些字段补充[原生 macOS 桌面发行物](../feature/2026-08-17-native-macos-desktop-app.zh.md)持有的自包含运行时与安全规则，不会创建第二套 agent 版本或更新通道。
 
 ## 考虑过的替代方案
@@ -24,4 +26,4 @@ Status: implemented
 
 ## 后果
 
-每个已发布 macOS 产物都会标识一个 Harness 内核版本和一个源码 revision。新的上游 Harness 版本需要新的对应 App tag，错误或过期 tag 会在签名与发布前失败。稳定版与预发布通道保持分离，但两者的名称都使用精确内核版本。上游合并后，发行工作流不会自动发布；匹配的 tag 仍是一次显式发行决定。
+每个已发布 macOS 产物都会标识一个 Harness 内核版本和一个源码 revision。新的上游 Harness 版本需要同步发行 manifest，并创建新的对应 App tag；错误的 manifest 或过期 tag 会在签名与发布前失败。稳定版与预发布通道保持分离，但两者的名称都使用精确内核版本。上游合并后，发行工作流不会自动发布；匹配的 tag 仍是一次显式发行决定。

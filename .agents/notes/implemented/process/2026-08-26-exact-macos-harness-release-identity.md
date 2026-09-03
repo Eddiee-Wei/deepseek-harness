@@ -12,6 +12,8 @@ The native macOS distribution packages a synchronized DeepSeek Harness runtime, 
 
 The exact version in `apps/cli/package.json` is the macOS release identity and remains separate from the numeric `CFBundleShortVersionString` required by macOS. Every `test-v*` and `app-v*` tag suffix equals that exact version, including any prerelease suffix, or `.github/workflows/macos-release.yml` rejects the run before packaging. Stable `app-v*` tags use the Developer ID and notarization path; prerelease Harness versions use `test-v*`, whose ad hoc-signed GitHub Pre-release remains explicitly unsuitable for general distribution.
 
+`apps/macos/package.json` participates in the `dsh` release family and uses the same exact version as the CLI and packaged workspaces. The release-family and install-layout checks reject any drift before the macOS workflow can publish an artifact.
+
 `apps/macos/build.sh` independently compares the requested release version with the bundled CLI manifest. The App metadata records the exact Harness version and full Git source revision. The DMG filename, workflow artifact, GitHub Release name, and checksum filename include the same Harness version. These fields complement the self-contained runtime and security rules owned by the [native macOS desktop distribution](../feature/2026-08-17-native-macos-desktop-app.md); they do not create a second agent version or update channel.
 
 ## Alternatives considered
@@ -24,4 +26,4 @@ The exact version in `apps/cli/package.json` is the macOS release identity and r
 
 ## Consequences
 
-Each published macOS artifact identifies one Harness kernel version and one source revision. A new upstream Harness version requires a new matching App tag, and an incorrect or stale tag fails before signing or publication. Stable and prerelease channels remain distinct even though both use the exact kernel version in their names. The release workflow does not publish automatically after an upstream merge; a matching tag is still an explicit release decision.
+Each published macOS artifact identifies one Harness kernel version and one source revision. A new upstream Harness version requires synchronized release manifests and a new matching App tag; an incorrect manifest or stale tag fails before signing or publication. Stable and prerelease channels remain distinct even though both use the exact kernel version in their names. The release workflow does not publish automatically after an upstream merge; a matching tag is still an explicit release decision.

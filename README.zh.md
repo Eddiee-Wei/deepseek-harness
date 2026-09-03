@@ -6,11 +6,11 @@
 
 ## 下载桌面应用
 
-当前适配的 Harness 版本：**0.1.2-alpha.4**
+当前适配的 Harness 版本：**0.1.2-alpha.5**
 
 | 平台 | 支持状态 | 下载 |
 |---|---|---|
-| macOS 13 或更高版本，Apple Silicon | 已提供测试预发布版 | **[下载 DMG](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.4/DeepSeek-Harness-0.1.2-alpha.4-macOS-arm64.dmg)** · [SHA-256](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.4/DeepSeek-Harness-0.1.2-alpha.4-macOS-arm64.dmg.sha256) · [发行说明](https://github.com/Eddiee-Wei/deepseek-harness/releases/tag/test-v0.1.2-alpha.4) |
+| macOS 13 或更高版本，Apple Silicon | 已提供测试预发布版 | **[下载 DMG](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.5/DeepSeek-Harness-0.1.2-alpha.5-macOS-arm64.dmg)** · [SHA-256](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.5/DeepSeek-Harness-0.1.2-alpha.5-macOS-arm64.dmg.sha256) · [发行说明](https://github.com/Eddiee-Wei/deepseek-harness/releases/tag/test-v0.1.2-alpha.5) |
 | Windows | 敬请期待 | — |
 | Linux | 敬请期待 | — |
 

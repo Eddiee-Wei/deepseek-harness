@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-08-26-exact-macos-harness-release-identity.md
-2026-08-26-exact-macos-harness-release-identity.md: a8cd5c17d8ba60b609e80cf3d672823d9ac8d7f9
-2026-08-26-exact-macos-harness-release-identity.zh.md: f9ce27d0e47b9d9c38ed82a7c82eb3d51cc5ff77
+2026-08-26-exact-macos-harness-release-identity.md: 7a11f1a0a2707684f8af28979cabb33e9243f1b8
+2026-08-26-exact-macos-harness-release-identity.zh.md: 82851a1ca556aa4ff0ae66241eb585d778360f25

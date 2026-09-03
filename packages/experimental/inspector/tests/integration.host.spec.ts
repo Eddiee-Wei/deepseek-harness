@@ -370,6 +370,12 @@ describe('experimental Inspector real Worker', () => {
     await Promise.all([cdp.call('Runtime.enable'), secondCdp.call('Runtime.enable')])
     const firstContext = await clientContext(cdp)
     const secondContext = await clientContext(secondCdp)
+    // A later Runtime round trip on the same ordered source transport proves
+    // that the Client processed each preceding Console enable frame.
+    await Promise.all([
+      cdp.call('Runtime.globalLexicalScopeNames', { executionContextId: firstContext }),
+      secondCdp.call('Runtime.globalLexicalScopeNames', { executionContextId: secondContext }),
+    ])
     const value = { owner: 'client-console' }
     const marker = 'client-console-event'
     await client.log(value, marker)

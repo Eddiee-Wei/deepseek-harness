@@ -4,7 +4,7 @@
   height: 36px;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: 0;
   border-radius: 12px;
   background: var(--dsw-alias-bg-layer-1);
   color: var(--dsw-alias-label-primary);
@@ -35,7 +35,7 @@
 
 .launcherChevron {
   width: 32px;
-  border-left: 1px solid var(--dsw-alias-border-l2);
+  border-left: 0.5px solid var(--dsw-alias-border-l2);
   color: var(--dsw-alias-label-secondary);
 }
 
@@ -52,7 +52,7 @@
   align-items: flex-start;
   gap: 10px;
   padding: 12px;
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: 0.5px solid var(--dsw-alias-border-l2);
   border-radius: 12px;
   background: var(--dsw-alias-bg-layer-2);
 }
@@ -129,6 +129,7 @@
   justify-self: start;
   padding: 2px 8px;
   border-radius: 999px;
+  corner-shape: round;
   font-size: 12px;
   line-height: 18px;
 }

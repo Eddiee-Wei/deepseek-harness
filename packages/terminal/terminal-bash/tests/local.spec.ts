@@ -143,7 +143,10 @@ describe.skipIf(process.platform === 'win32')('terminal-bash real shell', () => 
       expect(created.motd).toContain('dsh> ')
 
       const first = ctx.terminals.startSend(agent, created.sessionId, { text: 'export KEEP=ok; cd /', submit: true })
-      expect((await first.done).waitReason).toBe('stdin_read')
+      // PowerShell can regain the prompt before macOS exposes a readable-stdin
+      // observation; both readiness outcomes permit the next send, which the
+      // state-persistence assertion below verifies through the real shell.
+      expectReadyForNextSend((await first.done).waitReason)
       const second = ctx.terminals.startSend(agent, created.sessionId, { text: 'printf "cwd=%s keep=%s secret=%s\\n" "$PWD" "$KEEP" "${DSH_TEST_SECRET-unset}"', submit: true })
       expect((await second.done).viewport).toContain('cwd=/ keep=ok secret=unset')
 
