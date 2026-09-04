@@ -6,11 +6,11 @@ This repository packages the [DeepSeek Harness](https://github.com/deepseek-ai/d
 
 ## Download the desktop app
 
-Current adapted Harness version: **0.1.2-alpha.5**
+Current adapted Harness version: **0.1.2-rc.1**
 
 | Platform | Support | Download |
 |---|---|---|
-| macOS 13 or newer, Apple Silicon | Available as a test Pre-release | **[Download DMG](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.5/DeepSeek-Harness-0.1.2-alpha.5-macOS-arm64.dmg)** · [SHA-256](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-alpha.5/DeepSeek-Harness-0.1.2-alpha.5-macOS-arm64.dmg.sha256) · [Release notes](https://github.com/Eddiee-Wei/deepseek-harness/releases/tag/test-v0.1.2-alpha.5) |
+| macOS 13 or newer, Apple Silicon | Available as a test Pre-release | **[Download DMG](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-rc.1/DeepSeek-Harness-0.1.2-rc.1-macOS-arm64.dmg)** · [SHA-256](https://github.com/Eddiee-Wei/deepseek-harness/releases/download/test-v0.1.2-rc.1/DeepSeek-Harness-0.1.2-rc.1-macOS-arm64.dmg.sha256) · [Release notes](https://github.com/Eddiee-Wei/deepseek-harness/releases/tag/test-v0.1.2-rc.1) |
 | Windows | Coming soon | — |
 | Linux | Coming soon | — |
 
