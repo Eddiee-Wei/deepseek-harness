@@ -15,7 +15,7 @@ import { newEnglishPage, saveFailureShot } from './support.ts'
 
 const execFileAsync = promisify(execFile)
 const SNAPSHOT_DIR = fileURLToPath(new URL('./snapshots/workspace-developer-controls', import.meta.url))
-const SEED = fileURLToPath(new URL('../../../snapshots/web/seeded-history/session.jsonl', import.meta.url))
+const SEED = fileURLToPath(new URL('../../../snapshots/web/seeded-history/session.v2.jsonl', import.meta.url))
 const EXPECTED = join(SNAPSHOT_DIR, 'settings.expected.md')
 const MODE = webSnapshotMode()
 
