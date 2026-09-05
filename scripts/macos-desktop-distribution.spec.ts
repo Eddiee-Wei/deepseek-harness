@@ -46,6 +46,9 @@ describe('macOS desktop distribution', () => {
 
     expect(manifest.dependencies['dsh-python-runtime-closure']).toBe('workspace:*')
     expect(manifest.dependencies['@deepseek-ai/dsh-session-title-llm']).toBe('workspace:^')
+    expect(build).toContain('--ignore-scripts')
     expect(build).toContain('--config.node-linker=hoisted')
+    expect(build).toContain("require.resolve('fs-ext'")
+    expect(build).toContain('build/Release/fs_ext.node')
   })
 })

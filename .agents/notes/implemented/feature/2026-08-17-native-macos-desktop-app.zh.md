@@ -20,7 +20,7 @@ Session 区头的 Workspace 开发者控件仍属于共用 Web 客户端，而�
 
 WebKit 使用非持久数据存储，导航只允许当前受管的回环 origin。用户点击的外部链接交给系统浏览器。App 退出时负责子进程生命周期，先发送 SIGTERM，再用有时间上限的 SIGKILL 兜底。Developer ID 签名启用 hardened runtime；内置 Node.js 只获得其运行时与原生 addon 所需的动态代码和库校验例外。应用不启用 App Sandbox，因为 Harness 支持的工作包含经用户授权的文件系统、终端、子进程和语言服务器访问；这些权限仍由现有 Harness 策略负责。
 
-`apps/macos/build.sh` 会读取内置 `@deepseek-ai/dsh` CLI manifest 中的精确版本号，并把 Web 文档标题构建为 `DeepSeek Harness <版本号>`，保留预发布后缀。脚本还会分别提供产品名称与版本号，让侧边栏保持简洁的产品名，并在悬停时提供 `version[-commit][-dirty]`。这样，已安装客户端的可见身份会随已同步的 Harness revision 更新，同时不需要在运行时发起网络请求。随后，脚本会以扁平模块图部署维护中的运行时闭包，运行构建产物自检以验证访问栅栏与 token 交换，编译 Swift 外壳，将仓库内的 Web 图标光栅化，从内到外为嵌套 Mach-O 文件签名，验证 App，创建并验证压缩 DMG，最后输出 SHA-256 文件。`.github/workflows/macos-release.yml` 使用固定 commit 的 action 与 Apple Silicon runner。`app-v*` tag 必须具备 Developer ID 与公证凭据，并把验证后的 DMG 和校验和发布到 GitHub Release。`test-v*` tag 强制使用 ad hoc 签名、跳过公证，并发布带有明确警告、只用于可信测试的 GitHub Pre-release。手动运行可以生成 artifact，但不会发布 Release。
+`apps/macos/build.sh` 会读取内置 `@deepseek-ai/dsh` CLI manifest 中的精确版本号，并把 Web 文档标题构建为 `DeepSeek Harness <版本号>`，保留预发布后缀。脚本还会分别提供产品名称与版本号，让侧边栏保持简洁的产品名，并在悬停时提供 `version[-commit][-dirty]`。这样，已安装客户端的可见身份会随已同步的 Harness revision 更新，同时不需要在运行时发起网络请求。脚本会禁用生命周期脚本，以扁平模块图部署维护中的运行时闭包，再把 workspace 安装阶段生成且列入允许清单的 `fs-ext` 原生 addon 复制进部署目录。缺少该原生产物时，打包会失败。随后，脚本会运行构建产物自检以验证访问栅栏与 token 交换，编译 Swift 外壳，将仓库内的 Web 图标光栅化，从内到外为嵌套 Mach-O 文件签名，验证 App，创建并验证压缩 DMG，最后输出 SHA-256 文件。`.github/workflows/macos-release.yml` 使用固定 commit 的 action 与 Apple Silicon runner。`app-v*` tag 必须具备 Developer ID 与公证凭据，并把验证后的 DMG 和校验和发布到 GitHub Release。`test-v*` tag 强制使用 ad hoc 签名、跳过公证，并发布带有明确警告、只用于可信测试的 GitHub Pre-release。手动运行可以生成 artifact，但不会发布 Release。
 
 ## 考虑过的替代方案
 
