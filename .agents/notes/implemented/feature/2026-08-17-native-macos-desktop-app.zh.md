@@ -6,11 +6,13 @@ Status: implemented
 
 ## 问题
 
-DeepSeek Harness 已有适合桌面编程 agent 的浏览器表层、会话与插件体验，但没有自包含的 macOS App 或签名磁盘镜像。若包装层重新实现 agent 传输，或维护经过修改的 agent loop，视觉客户端将很难持续跟进上游 Harness，也可能形成第二套权限或持久化模型。单纯启动浏览器还会让无关浏览器 origin 和误连的本机客户端访问回环上的代码执行表层。
+DeepSeek Harness 已有适合桌面编程 agent 的浏览器表层、会话与插件体验。这个社区发行早于官方跨平台桌面应用，并继续维护独立的 Swift macOS 磁盘镜像。若包装层重新实现 agent 传输，或维护经过修改的 agent loop，视觉客户端将很难持续跟进上游 Harness，也可能形成第二套权限或持久化模型。单纯启动浏览器还会让无关浏览器 origin 和误连的本机客户端访问回环上的代码执行表层。
 
 ## 决策
 
 `apps/macos` 是现有 `dsh web` 组合之上的私有部署根与 Swift AppKit／WebKit 原生外壳。它被明确排除在 npm release member 策略之外，因为其 manifest 选择的是复制进签名 App 的依赖闭包，而不是定义可供消费的 JavaScript 包。部署根依赖官方 Python SDK 运行时载体；后者继续维护完整 Harness 运行时闭包，桌面端只补充自己的特有要求。扁平的生产部署让打包后的 ESM 插件共享一份 peer 模块图，无需在桌面层重复上游包清单。应用内置 arm64 Node.js，并使用原生 Node.js 启动已发布的 `@deepseek-ai/dsh` CLI。外壳只解析现有 `dsh web:` 就绪行，不导入 agent 内部实现，不修改 `agent-loop`，不发明会话格式，也不增加桌面专用工具协议。
+
+上游 `apps/desktop` 与 `apps/desktop-host` 包提供官方 Electron 应用；除普通上游合并外，本发行不修改它们。社区 `apps/macos` 根继续作为独立的 Apple Silicon 发行物，使用单独的 `app:macos` 命令、发行工作流、bundle 标识符与归属说明。两个应用根都是私有 workspace member；它们都不会改变 npm 发布成员或共用 Harness 运行时语义。
 
 外壳会在文档首次绘制前注入 `html[data-dsh-desktop='macos']`。客户端包只通过该标记为原生标题栏留白并进行少量桌面几何调整。对应的原生拖拽视图会把原始鼠标按下事件交给 `NSWindow.performDrag(with:)`；系统窗口移动因此只发生在标题栏留白区域，不依赖 WebKit 命中测试，也不会让整个窗口背景都可拖动。应用使用 DeepSeek Harness 名称与仓库自带的 Web 鱼形标记，同时按[上游可见的 macOS 品牌决策](2026-09-02-upstream-visible-macos-branding-and-resources.zh.md)保留中性 bundle 标识符和独立社区归属说明；窗口组合遵循 Codex 桌面布局：原生窗口装饰、常驻导航侧栏、对话画布、输入框和可选详情栏。
 
@@ -26,7 +28,7 @@ WebKit 使用非持久数据存储，导航只允许当前受管的回环 origin
 
 **把 Web 客户端与 agent 运行时分叉到单独的桌面仓库。** 未采用，因为每次上游会话、传输、权限与插件变化都需要第二套实现和协同迁移。
 
-**使用带私有 IPC 传输的 Electron。** 首个版本未采用，因为仓库已经拥有完整的 HTTP／WebSocket Web 组合；Electron 会再内置一个浏览器运行时，并保留当前 Web 包已经不需要的历史 file／IPC 分支。未来若需要跨平台，可以在不改变 DSH 运行时接缝的前提下重新评估。
+**用官方 Electron 应用替换本发行物。** 这个社区发行系列不采用该方案，因为现有用户使用本文记录的 Swift／WebKit 产物、bundle 身份与 GitHub 发行工作流。官方 Electron 应用仍可通过上游维护的命令使用，本发行不会分叉或修改它。
 
 **启动用户已经安装的 `dsh`，或首次运行时下载。** 未采用，因为 App 能否启动将取决于用户安装状态与网络，并且远端包更新可以独立于签名 DMG 改变可执行代码。
 
