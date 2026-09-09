@@ -74,17 +74,11 @@ if ! grep -Fq "<title>$DESKTOP_CLIENT_TITLE</title>" "$REPO_ROOT/apps/web/dist/i
 fi
 pnpm --ignore-scripts --config.inject-workspace-packages=true --config.node-linker=hoisted \
   --filter @deepseek-ai/dsh-macos-app deploy --prod "$RUNTIME_PATH/app"
-FS_EXT_PACKAGE_PATH="$("$NODE_SOURCE" -p \
-  "require.resolve('fs-ext', { paths: [process.argv[1]] })" \
-  "$REPO_ROOT/packages/session/session-persistence-jsonl")"
-FS_EXT_SOURCE="${FS_EXT_PACKAGE_PATH:h}/build/Release/fs_ext.node"
-FS_EXT_DEST="$RUNTIME_PATH/app/node_modules/fs-ext/build/Release/fs_ext.node"
-if [[ ! -f "$FS_EXT_SOURCE" ]]; then
-  print -u2 "the installed fs-ext native addon is missing; run pnpm install before packaging"
+SYSTEM_ADDON_PATH="$RUNTIME_PATH/app/node_modules/@deepseek-ai/node-addon-system-darwin-arm64/bin/system.node"
+if [[ ! -f "$SYSTEM_ADDON_PATH" ]]; then
+  print -u2 "the deployed @deepseek-ai/node-addon-system native addon is missing"
   exit 2
 fi
-mkdir -p "${FS_EXT_DEST:h}"
-cp "$FS_EXT_SOURCE" "$FS_EXT_DEST"
 while IFS= read -r helper; do
   chmod 755 "$helper"
 done < <(find "$RUNTIME_PATH/app" -type f -path '*/node-pty/prebuilds/darwin-arm64/spawn-helper' -print)
