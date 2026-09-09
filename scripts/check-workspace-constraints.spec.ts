@@ -114,7 +114,7 @@ describe('package payload constraints', () => {
   it('keeps the macOS packaging root private and outside npm publication policy', () => {
     expect(checkWorkspaceManifest({
       dir: 'apps/macos',
-      manifest: { name: '@deepseek-ai/dsh-macos-app', version: '0.1.3-alpha.2', private: true },
+      manifest: { name: '@deepseek-ai/dsh-macos-app', version: '0.1.5-alpha.1', private: true },
     })).toEqual([])
   })
 
